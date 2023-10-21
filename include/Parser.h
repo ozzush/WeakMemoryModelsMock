@@ -29,7 +29,7 @@ const std::map<std::string, Command> STRING_TO_COMMAND = {
         {"load", Command::Load},
         {"store", Command::Store},
         {"cas", Command::CompareAndSwap},
-        {"fai", Command::FetchAndIncrement},
+        {"fei", Command::FetchAndIncrement},
         {"fence", Command::Fence},
 };
 
