@@ -12,7 +12,7 @@ target_sources(storage_lib PUBLIC
         src/Storage.cpp
         )
 
-add_library(parser_lib STATIC)
+add_library(parser_lib STATIC src/InstructionToString.cpp)
 target_include_directories(parser_lib PUBLIC include)
 target_sources(parser_lib PUBLIC
         src/Program.cpp

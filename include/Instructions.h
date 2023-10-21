@@ -17,7 +17,6 @@ enum class MemoryAccessMode {
 enum class InstructionAction {
     StoreConstInRegister,
     StoreExprInRegister,
-    LoadFromRegister,
     Goto,
     Load,
     Store,
@@ -35,19 +34,18 @@ struct Instruction {
     const InstructionAction action;
     virtual ~Instruction() = default;
 
+    virtual std::string toString() const = 0;
 protected:
-    explicit Instruction(InstructionAction action_) : action(action_) {}
 
-    friend bool operator==(const InstructionPtr &lhs,
-                           const InstructionPtr &rhs) {
-        if (lhs->action != rhs->action) return false;
-    }
+    explicit Instruction(InstructionAction action_) : action(action_) {}
 };
 
 
 #define InstructionImplementation1(InstructionName, argType, argName)          \
     struct InstructionName : Instruction {                                     \
         const argType argName;                                                 \
+                                                                               \
+        std::string toString() const override;                                 \
                                                                                \
         explicit InstructionName(argType argName_)                             \
             : Instruction(InstructionAction::InstructionName),                 \
@@ -60,6 +58,8 @@ protected:
         const argType1 argName1;                                               \
         const argType2 argName2;                                               \
                                                                                \
+        std::string toString() const override;                                 \
+                                                                               \
         explicit InstructionName(argType1 argName1_, argType2 argName2_)       \
             : Instruction(InstructionAction::InstructionName),                 \
               argName1(argName1_), argName2(argName2_) {}                      \
@@ -71,6 +71,8 @@ protected:
         const argType1 argName1;                                               \
         const argType2 argName2;                                               \
         const argType3 argName3;                                               \
+                                                                               \
+        std::string toString() const override;                                 \
                                                                                \
         explicit InstructionName(argType1 argName1_, argType2 argName2_,       \
                                  argType3 argName3_)                           \
@@ -87,6 +89,8 @@ protected:
         const argType3 argName3;                                               \
         const argType4 argName4;                                               \
                                                                                \
+        std::string toString() const override;                                 \
+                                                                               \
         explicit InstructionName(argType1 argName1_, argType2 argName2_,       \
                                  argType3 argName3_, argType4 argName4_)       \
             : Instruction(InstructionAction::InstructionName),                 \
@@ -99,7 +103,6 @@ InstructionImplementation2(StoreConstInRegister, size_t, storeRegister, int32_t,
 InstructionImplementation4(StoreExprInRegister, size_t, storeRegister, size_t,
                            leftRegister, BinaryOperation, operation, size_t,
                            rightRegister);
-InstructionImplementation1(LoadFromRegister, size_t, loadRegister);
 InstructionImplementation2(Goto, size_t, conditionRegister, size_t, label);
 InstructionImplementation3(Load, MemoryAccessMode, mode, size_t,
                            addressRegister, size_t, resultRegister);

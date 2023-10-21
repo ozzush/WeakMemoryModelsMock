@@ -63,7 +63,7 @@ class Parser {
     static InstructionPtr parseStoreInRegister(const std::vector<std::string> &tokens);
 
 public:
-    std::tuple<std::optional<Label>, InstructionPtr> parseLine(const std::string &line) const;
+    static std::tuple<std::optional<Label>, InstructionPtr> parseLine(const std::string &line);
 
     Program parseFromStream(std::istream &stream);
 

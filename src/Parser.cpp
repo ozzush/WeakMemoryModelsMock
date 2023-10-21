@@ -23,6 +23,15 @@ static size_t parseRegister(const std::string &string) {
     throw std::runtime_error("Couldn't parse register");
 }
 
+static size_t parseRegisterWithMemAddress(const std::string &string) {
+    size_t res = -1;
+    if (string.empty() || string.front() != '#' ||
+        !(std::stringstream(string.substr(1, string.size() - 1)) >> res)) {
+        throw std::runtime_error("Couldn't parse register");
+    }
+    return res;
+}
+
 static int32_t parseConstant(const std::string &string) {
     int32_t res = INT32_MIN;
     if (std::stringstream(string) >> res) { return res; }
@@ -38,9 +47,7 @@ static MemoryAccessMode parseMemoryAccessMode(const std::string &string) {
 
 static Label parseLabel(const std::string &string) {
     Label label = 0;
-    if (std::stringstream(string) >> label) {
-        return label;
-    }
+    if (std::stringstream(string) >> label) { return label; }
     throw std::runtime_error("Couldn't parse label");
 }
 
@@ -49,11 +56,9 @@ static std::optional<Label> tryParseLabel(const std::string &string) {
     return parseLabel(string.substr(0, string.size() - 1));
 }
 
-
-
 static BinaryOperation parseBinaryOperation(const std::string &string) {
     if (string.size() != 1 || CHAR_TO_BIN_OPERATION.count(string[0]) == 0) {
-        throw std::runtime_error("Couldn't parse constant value");
+        throw std::runtime_error("Couldn't parse binary operation");
     }
     return CHAR_TO_BIN_OPERATION.at(string[0]);
 }
@@ -85,7 +90,7 @@ Parser::parseStoreInRegister(const std::vector<std::string> &tokens) {
 }
 
 std::tuple<std::optional<Label>, InstructionPtr>
-Parser::parseLine(const std::string &line) const {
+Parser::parseLine(const std::string &line) {
     if (line.empty() || line.front() == '/') return {};
     std::stringstream ss(line);
     std::vector<std::string> tokens = parseTokens(ss, 6);
@@ -119,7 +124,7 @@ Parser::parseLine(const std::string &line) const {
                 throw std::runtime_error("Couldn't parse load");
             }
             MemoryAccessMode mode = parseMemoryAccessMode(tokens[1]);
-            size_t addressRegister = parseRegister(tokens[2]);
+            size_t addressRegister = parseRegisterWithMemAddress(tokens[2]);
             size_t destinationRegister = parseRegister(tokens[3]);
             instruction = std::make_shared<Load>(mode, addressRegister,
                                                  destinationRegister);
@@ -130,7 +135,7 @@ Parser::parseLine(const std::string &line) const {
                 throw std::runtime_error("Couldn't parse store");
             }
             MemoryAccessMode mode = parseMemoryAccessMode(tokens[1]);
-            size_t addressRegister = parseRegister(tokens[2]);
+            size_t addressRegister = parseRegisterWithMemAddress(tokens[2]);
             size_t valueRegister = parseRegister(tokens[3]);
             instruction = std::make_shared<Store>(mode, addressRegister,
                                                   valueRegister);
@@ -141,7 +146,7 @@ Parser::parseLine(const std::string &line) const {
                 throw std::runtime_error("Couldn't parse cas");
             }
             MemoryAccessMode mode = parseMemoryAccessMode(tokens[1]);
-            size_t addressRegister = parseRegister(tokens[2]);
+            size_t addressRegister = parseRegisterWithMemAddress(tokens[2]);
             size_t expectedValRegister = parseRegister(tokens[3]);
             size_t newValRegister = parseRegister(tokens[4]);
             instruction = std::make_shared<CompareAndSwap>(
@@ -153,7 +158,7 @@ Parser::parseLine(const std::string &line) const {
                 throw std::runtime_error("Couldn't parse fai");
             }
             MemoryAccessMode mode = parseMemoryAccessMode(tokens[1]);
-            size_t addressRegister = parseRegister(tokens[2]);
+            size_t addressRegister = parseRegisterWithMemAddress(tokens[2]);
             size_t incrementRegister = parseRegister(tokens[3]);
             instruction = std::make_shared<FetchAndIncrement>(
                     mode, addressRegister, incrementRegister);
@@ -177,7 +182,8 @@ Program Parser::parseFromStream(std::istream &stream) {
         auto [label, instruction] = parseLine(line);
         if (label) {
             if (labelMapping.count(label.value()) > 0) {
-                throw std::runtime_error("Duplicate label `" + std::to_string(label.value()) + '`');
+                throw std::runtime_error("Duplicate label `" +
+                                         std::to_string(label.value()) + '`');
             }
             labelMapping[label.value()] = program.size();
         }
