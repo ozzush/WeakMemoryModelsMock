@@ -57,17 +57,14 @@ struct ParsingError : std::runtime_error {
 };
 
 class Parser {
-    std::vector<InstructionPtr> program;
-    std::unordered_map<Label, size_t> labelMapping;
-
     static InstructionPtr parseStoreInRegister(const std::vector<std::string> &tokens);
 
 public:
     static std::tuple<std::optional<Label>, InstructionPtr> parseLine(const std::string &line);
 
-    Program parseFromStream(std::istream &stream);
+    static Program parseFromStream(std::istream &stream);
 
-    Program parseFromString(const std::string &input);
+    static Program parseFromString(const std::string &input);
 };
 
 } // namespace wmm

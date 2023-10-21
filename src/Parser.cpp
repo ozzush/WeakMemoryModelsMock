@@ -178,16 +178,25 @@ Parser::parseLine(const std::string &line) {
 
 Program Parser::parseFromStream(std::istream &stream) {
     std::string line;
+    size_t linesRead = 0;
+    std::vector<InstructionPtr> program;
+    std::unordered_map<Label, size_t> labelMapping;
     while (std::getline(stream, line)) {
-        auto [label, instruction] = parseLine(line);
-        if (label) {
-            if (labelMapping.count(label.value()) > 0) {
-                throw std::runtime_error("Duplicate label `" +
-                                         std::to_string(label.value()) + '`');
+        ++linesRead;
+        try {
+            auto [label, instruction] = parseLine(line);
+            if (label) {
+                if (labelMapping.count(label.value()) > 0) {
+                    throw std::runtime_error("Duplicate label `" +
+                                             std::to_string(label.value()) +
+                                             '`');
+                }
+                labelMapping[label.value()] = program.size();
             }
-            labelMapping[label.value()] = program.size();
+            program.push_back(instruction);
+        } catch (const std::exception &e) {
+            throw ParsingError(linesRead, e.what());
         }
-        program.push_back(instruction);
     }
     return {std::move(program), std::move(labelMapping)};
 }

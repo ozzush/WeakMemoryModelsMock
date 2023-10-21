@@ -3,18 +3,23 @@
 //
 
 #include "Storage.h"
-#include <stdexcept>
 
 namespace wmm {
 
-size_t Storage::load(size_t address) const {
-    return storage.at(address);
+int32_t Storage::load(size_t address) const {
+    return m_storage.at(address);
 }
+
 size_t Storage::size() const noexcept {
-    return storage.size();
+    return m_storage.size();
 }
+
 void Storage::store(size_t address, int32_t value) {
-    storage.at(address) = value;
+    m_storage.at(address) = value;
+}
+
+std::vector<int32_t> Storage::getStorage() const  {
+    return m_storage;
 }
 
 } // namespace wmm

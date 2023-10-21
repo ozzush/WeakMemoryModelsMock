@@ -3,13 +3,25 @@ project(WeakMemoryModelMock)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(weak_memory_model main.cpp)
-#target_link_libraries(weak_memory_model PUBLIC main_memory)
+add_executable(weak_memory_model src/main.cpp)
+target_link_libraries(weak_memory_model PUBLIC
+        parser_lib
+        executor_lib
+        storage_lib
+        )
 
 add_library(storage_lib STATIC)
 target_include_directories(storage_lib PUBLIC include)
 target_sources(storage_lib PUBLIC
         src/Storage.cpp
+        src/StorageManager.cpp
+        )
+
+add_library(executor_lib STATIC)
+target_include_directories(executor_lib PUBLIC include)
+target_sources(executor_lib PUBLIC
+        src/ThreadManager.cpp
+        src/Thread.cpp
         )
 
 add_library(parser_lib STATIC)

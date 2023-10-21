@@ -9,8 +9,8 @@ namespace wmm {
 using Label = size_t;
 
 class Program {
-    const std::vector<std::shared_ptr<Instruction>> program;
-    const std::unordered_map<Label, size_t> labelMapping;
+    const std::vector<std::shared_ptr<Instruction>> m_program;
+    const std::unordered_map<Label, size_t> m_labelMapping;
 
 public:
     [[nodiscard]] std::shared_ptr<Instruction>
@@ -18,9 +18,11 @@ public:
 
     [[nodiscard]] size_t getLabelMapping(size_t label) const;
 
-    Program(std::vector<std::shared_ptr<Instruction>> &&program_,
-            std::unordered_map<Label, size_t> &&labelMapping_)
-        : program(std::move(program_)), labelMapping(std::move(labelMapping_)) {
+    [[nodiscard]] size_t size() const;
+
+    Program(std::vector<std::shared_ptr<Instruction>> &&program,
+            std::unordered_map<Label, size_t> &&labelMapping)
+        : m_program(std::move(program)), m_labelMapping(std::move(labelMapping)) {
     }
 };
 
