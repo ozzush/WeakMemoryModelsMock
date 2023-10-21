@@ -50,10 +50,10 @@ struct ParsingError : std::runtime_error {
     ParsingError(const std::string &message, size_t lineNumber,
                  const std::string &line)
         : std::runtime_error(message + " in line " +
-                             std::to_string(lineNumber) + ':' + line) {}
+                             std::to_string(lineNumber) + ": " + line) {}
     ParsingError(size_t lineNumber, const std::string &line)
         : std::runtime_error("Parsing error in line " +
-                             std::to_string(lineNumber) + ':' + line) {}
+                             std::to_string(lineNumber) + ": " + line) {}
 };
 
 class Parser {
