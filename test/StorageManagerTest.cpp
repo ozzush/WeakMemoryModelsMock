@@ -10,9 +10,10 @@
 using namespace wmm;
 
 TEST_SUITE("Total Store Order") {
-    TotalStoreOrderStorageManager storageManager(10, 2);
-
     TEST_CASE("Load and Store") {
+        InternalUpdateManagerPtr internalUpdateManager(new SequentialTSOInternalUpdateManager());
+        TotalStoreOrderStorageManager storageManager(10, 2, std::move(internalUpdateManager));
+
         SUBCASE("Load from uninitialized storage should return 0") {
             int32_t result = storageManager.load(0, 0, MemoryAccessMode::Relaxed);
             CHECK_EQ(result, 0);
@@ -27,13 +28,16 @@ TEST_SUITE("Total Store Order") {
             storageManager.store(0, 0, 42, MemoryAccessMode::Relaxed);
             int32_t result = storageManager.load(1, 0, MemoryAccessMode::Relaxed);
             REQUIRE_EQ(result, 0);
-            storageManager.flushBuffer(0);
+            storageManager.internalUpdate();
             result = storageManager.load(1, 0, MemoryAccessMode::Relaxed);
-            CHECK_EQ(result, 0);
+            CHECK_EQ(result, 42);
         }
     }
 
     TEST_CASE("CompareAndSwap") {
+        InternalUpdateManagerPtr internalUpdateManager(new SequentialTSOInternalUpdateManager());
+        TotalStoreOrderStorageManager storageManager(10, 2, std::move(internalUpdateManager));
+
         storageManager.store(0, 0, 42, MemoryAccessMode::Relaxed);
         SUBCASE("CompareAndSwap should succeed with the expected value") {
             storageManager.compareAndSwap(0, 0, 42, 43, MemoryAccessMode::Relaxed);
@@ -48,6 +52,9 @@ TEST_SUITE("Total Store Order") {
     }
 
     TEST_CASE("FetchAndIncrement") {
+        InternalUpdateManagerPtr internalUpdateManager(new SequentialTSOInternalUpdateManager());
+        TotalStoreOrderStorageManager storageManager(10, 2, std::move(internalUpdateManager));
+
         SUBCASE("FetchAndIncrement doesn't ignore buffer") {
             storageManager.store(0, 0, 10, MemoryAccessMode::Relaxed);
             storageManager.fetchAndIncrement(0, 0, 42, MemoryAccessMode::Relaxed);
@@ -62,6 +69,9 @@ TEST_SUITE("Total Store Order") {
     }
 
     TEST_CASE("Fence") {
+        InternalUpdateManagerPtr internalUpdateManager(new SequentialTSOInternalUpdateManager());
+        TotalStoreOrderStorageManager storageManager(10, 2, std::move(internalUpdateManager));
+
         SUBCASE("Fence flushes buffer") {
             storageManager.store(0, 0, 10, MemoryAccessMode::Relaxed);
             int32_t result = storageManager.load(1, 0, MemoryAccessMode::Relaxed);
@@ -79,7 +89,4 @@ TEST_SUITE("Total Store Order") {
             CHECK_EQ(result, 0);
         }
     }
-
-    // Add assertions for other test cases (FetchAndIncrement, Fence, Flush, GetStorage, WriteStorage)
-
 }
