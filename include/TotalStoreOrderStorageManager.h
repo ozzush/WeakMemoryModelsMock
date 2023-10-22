@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <deque>
 #include <optional>
+#include <random>
 namespace wmm {
 
 struct StoreInstruction {
@@ -51,32 +52,31 @@ public:
     }
 };
 
-//class TSOInternalUpdateManagerInterface {
-//    virtual void setUp(){};
-//    virtual void tearDown(){};
-//    virtual size_t getThreadId() = 0;
-//
-//public:
-//    virtual ~TSOInternalUpdateManagerInterface() = default;
-//
-//    template <>
-//    friend class TotalStoreOrderStorageManager;
-//};
+class TotalStoreOrderStorageManager;
 
-//using TSOInternalUpdateManagerInterfacePtr =
-//        std::unique_ptr<TSOInternalUpdateManagerInterface>;
+class InternalUpdateManager {
+    virtual void reset(const TotalStoreOrderStorageManager &storageManager) = 0;
+    virtual std::optional<size_t> getThreadId() = 0;
+
+    friend class TotalStoreOrderStorageManager;
+
+public:
+    virtual ~InternalUpdateManager() = default;
+};
+
+using InternalUpdateManagerPtr = std::unique_ptr<InternalUpdateManager>;
 
 class SequentialTSOInternalUpdateManager;
 class RandomTSOInternalUpdateManager;
 
-template<class InternalUpdateManager>
 class TotalStoreOrderStorageManager : public StorageManagerInterface {
     Storage m_storage;
     std::vector<Buffer> m_threadBuffers;
-    InternalUpdateManager m_internalUpdateManager;
+    InternalUpdateManagerPtr m_internalUpdateManager;
 
     void flushBuffer(size_t threadId) {
-        while (propagate(threadId));
+        while (propagate(threadId))
+            ;
     }
 
     bool propagate(size_t threadId) {
@@ -89,9 +89,11 @@ class TotalStoreOrderStorageManager : public StorageManagerInterface {
     }
 
 public:
-    TotalStoreOrderStorageManager(size_t storageSize, size_t nOfThreads)
+    TotalStoreOrderStorageManager(
+            size_t storageSize, size_t nOfThreads,
+            InternalUpdateManagerPtr &&internalUpdateManager)
         : m_storage(storageSize), m_threadBuffers(nOfThreads),
-          m_internalUpdateManager(*this) {}
+          m_internalUpdateManager(std::move(internalUpdateManager)) {}
 
     int32_t load(size_t threadId, size_t address,
                  MemoryAccessMode accessMode) override {
@@ -106,7 +108,8 @@ public:
     }
 
     void compareAndSwap(size_t threadId, size_t address, int32_t expectedValue,
-                        int32_t newValue, MemoryAccessMode accessMode) override {
+                        int32_t newValue,
+                        MemoryAccessMode accessMode) override {
         flushBuffer(threadId);
         auto value = m_storage.load(address);
         if (value == expectedValue) { m_storage.store(address, newValue); }
@@ -134,11 +137,9 @@ public:
     }
 
     bool internalUpdate() override {
-        m_internalUpdateManager.reset();
-        while(auto threadId = m_internalUpdateManager.getThreadId()) {
-            if (propagate(threadId.value())) {
-                return true;
-            }
+        m_internalUpdateManager->reset(*this);
+        while (auto threadId = m_internalUpdateManager->getThreadId()) {
+            if (propagate(threadId.value())) { return true; }
         }
         return false;
     }
@@ -147,27 +148,48 @@ public:
     friend class RandomTSOInternalUpdateManager;
 };
 
-class SequentialTSOInternalUpdateManager {
-    size_t m_nextThreadId;
-    size_t m_maxThreadId;
+class SequentialTSOInternalUpdateManager : public InternalUpdateManager {
+    size_t m_nextThreadId = 0;
+    size_t m_maxThreadId = 0;
 
-    explicit SequentialTSOInternalUpdateManager(
-            const TotalStoreOrderStorageManager<
-                    SequentialTSOInternalUpdateManager> &storageManager)
-        : m_maxThreadId(storageManager.m_threadBuffers.size()),
-          m_nextThreadId(0) {}
+    void reset(const TotalStoreOrderStorageManager &storageManager) override {
+        m_nextThreadId = 0;
+        m_maxThreadId = storageManager.m_threadBuffers.size();
+    }
 
-    void reset() { m_nextThreadId = 0; }
+    std::optional<size_t> getThreadId() override {
+        if (m_nextThreadId < m_maxThreadId) { return m_nextThreadId++; }
+        return {};
+    }
 
-    std::optional<size_t> getThreadId() {
-        if (m_nextThreadId < m_maxThreadId) {
-            return m_nextThreadId++;
+public:
+    SequentialTSOInternalUpdateManager() = default;
+
+};
+
+class RandomTSOInternalUpdateManager : public InternalUpdateManager {
+    std::vector<size_t> m_threadIds;
+    size_t m_nextThreadIdIndex;
+    std::mt19937 m_randomGenerator;
+
+    void reset(const TotalStoreOrderStorageManager &storageManager) override {
+        m_threadIds.resize(storageManager.m_threadBuffers.size());
+        for (int i = 0; i < m_threadIds.size(); ++i) {
+            m_threadIds[i] = i;
+        }
+        std::shuffle(m_threadIds.begin(), m_threadIds.end(), m_randomGenerator);
+        m_nextThreadIdIndex = 0;
+    }
+
+    std::optional<size_t> getThreadId() override {
+        if (m_nextThreadIdIndex < m_threadIds.size()) {
+            return m_threadIds[m_nextThreadIdIndex++];
         }
         return {};
     }
 
-    friend class TotalStoreOrderStorageManager<
-            SequentialTSOInternalUpdateManager>;
+public:
+    explicit RandomTSOInternalUpdateManager(unsigned long seed) : m_randomGenerator(seed), m_nextThreadIdIndex(0) {}
 };
 
 } // namespace wmm

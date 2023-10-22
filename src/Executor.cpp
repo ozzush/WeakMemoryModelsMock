@@ -32,4 +32,13 @@ void RandomExecutor::writeState(std::ostream &outputStream) const {
     }
 }
 
+bool RandomExecutor::execute() {
+    bool tryExecuteThreadFirst = std::uniform_int_distribution<size_t>(0, 1)(m_randomGenerator);
+    if (tryExecuteThreadFirst) {
+        return executeThread() || executeInternalMemoryUpdate();
+    } else {
+        return executeInternalMemoryUpdate() || executeThread();
+    }
+}
+
 } // namespace wmm
