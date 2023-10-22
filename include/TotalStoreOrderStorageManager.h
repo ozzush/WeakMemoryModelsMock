@@ -4,12 +4,14 @@
 
 #pragma once
 
-#include "Storage.h"
-#include "StorageManager.h"
 #include <algorithm>
 #include <deque>
 #include <optional>
 #include <random>
+
+#include "Storage.h"
+#include "StorageManager.h"
+
 namespace wmm {
 
 struct StoreInstruction {
@@ -27,22 +29,11 @@ public:
     friend std::ostream &operator<<(std::ostream &os, const Buffer &buffer);
 };
 
-class TotalStoreOrderStorageManager;
-
-class InternalUpdateManager {
-    virtual void reset(const TotalStoreOrderStorageManager &storageManager) = 0;
-    virtual std::optional<size_t> getThreadId() = 0;
-
-    friend class TotalStoreOrderStorageManager;
-
-public:
-    virtual ~InternalUpdateManager() = default;
-};
-
-using InternalUpdateManagerPtr = std::unique_ptr<InternalUpdateManager>;
-
+class InternalUpdateManager;
 class SequentialTSOInternalUpdateManager;
 class RandomTSOInternalUpdateManager;
+
+using InternalUpdateManagerPtr = std::unique_ptr<InternalUpdateManager>;
 
 class TotalStoreOrderStorageManager : public StorageManagerInterface {
     Storage m_storage;
@@ -75,6 +66,16 @@ public:
 
     friend class SequentialTSOInternalUpdateManager;
     friend class RandomTSOInternalUpdateManager;
+};
+
+class InternalUpdateManager {
+    virtual void reset(const TotalStoreOrderStorageManager &storageManager) = 0;
+    virtual std::optional<size_t> getThreadId() = 0;
+
+    friend class TotalStoreOrderStorageManager;
+
+public:
+    virtual ~InternalUpdateManager() = default;
 };
 
 class SequentialTSOInternalUpdateManager : public InternalUpdateManager {
