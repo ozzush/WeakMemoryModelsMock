@@ -21,35 +21,10 @@ class Buffer {
     std::deque<StoreInstruction> m_buffer;
 
 public:
-    void push(StoreInstruction instruction) {
-        m_buffer.push_back(instruction);
-    };
-
-    std::optional<StoreInstruction> pop() {
-        if (m_buffer.empty()) { return {}; }
-        auto returnValue = m_buffer.front();
-        m_buffer.pop_front();
-        return returnValue;
-    }
-
-    std::optional<int32_t> find(size_t address) {
-        auto elm = std::find_if(m_buffer.rbegin(), m_buffer.rend(),
-                                [address](auto instruction) {
-                                    return instruction.address == address;
-                                });
-        if (elm == m_buffer.rend()) { return {}; }
-        return elm->value;
-    }
-
-    friend std::ostream &operator<<(std::ostream &os, const Buffer &buffer) {
-        bool isFirstIteration = true;
-        for (auto instruction: buffer.m_buffer) {
-            if (!isFirstIteration) os << ' ';
-            os << instruction.address << "->" << instruction.value;
-            isFirstIteration = false;
-        }
-        return os;
-    }
+    void push(StoreInstruction instruction);
+    std::optional<StoreInstruction> pop();
+    std::optional<int32_t> find(size_t address);
+    friend std::ostream &operator<<(std::ostream &os, const Buffer &buffer);
 };
 
 class TotalStoreOrderStorageManager;
@@ -74,19 +49,8 @@ class TotalStoreOrderStorageManager : public StorageManagerInterface {
     std::vector<Buffer> m_threadBuffers;
     InternalUpdateManagerPtr m_internalUpdateManager;
 
-    void flushBuffer(size_t threadId) {
-        while (propagate(threadId))
-            ;
-    }
-
-    bool propagate(size_t threadId) {
-        auto instruction = m_threadBuffers.at(threadId).pop();
-        if (instruction) {
-            m_storage.store(instruction->address, instruction->value);
-            return true;
-        }
-        return false;
-    }
+    void flushBuffer(size_t threadId);
+    bool propagate(size_t threadId);
 
 public:
     TotalStoreOrderStorageManager(
@@ -96,53 +60,18 @@ public:
           m_internalUpdateManager(std::move(internalUpdateManager)) {}
 
     int32_t load(size_t threadId, size_t address,
-                 MemoryAccessMode accessMode) override {
-        auto valueFromBuffer = m_threadBuffers.at(threadId).find(address);
-        if (valueFromBuffer) { return valueFromBuffer.value(); }
-        return m_storage.load(address);
-    }
-
+                 MemoryAccessMode accessMode) override;
     void store(size_t threadId, size_t address, int32_t value,
-               MemoryAccessMode accessMode) override {
-        m_threadBuffers.at(threadId).push({address, value});
-    }
-
+               MemoryAccessMode accessMode) override;
     void compareAndSwap(size_t threadId, size_t address, int32_t expectedValue,
-                        int32_t newValue,
-                        MemoryAccessMode accessMode) override {
-        flushBuffer(threadId);
-        auto value = m_storage.load(address);
-        if (value == expectedValue) { m_storage.store(address, newValue); }
-    }
-
+                        int32_t newValue, MemoryAccessMode accessMode) override;
     void fetchAndIncrement(size_t threadId, size_t address, int32_t increment,
-                           MemoryAccessMode accessMode) override {
-        flushBuffer(threadId);
-        auto value = m_storage.load(address);
-        m_storage.store(address, value + increment);
-    }
-
-    void fence(size_t threadId, MemoryAccessMode accessMode) override {
-        flushBuffer(threadId);
-    }
+                           MemoryAccessMode accessMode) override;
+    void fence(size_t threadId, MemoryAccessMode accessMode) override;
 
     [[nodiscard]] Storage getStorage() const override { return m_storage; }
-
-    void writeStorage(std::ostream &outputStream) const override {
-        outputStream << "Shared storage: " << m_storage << '\n';
-        outputStream << "Thread buffers:\n";
-        for (size_t i = 0; i < m_threadBuffers.size(); ++i) {
-            outputStream << 't' << i << ": " << m_threadBuffers[i] << '\n';
-        }
-    }
-
-    bool internalUpdate() override {
-        m_internalUpdateManager->reset(*this);
-        while (auto threadId = m_internalUpdateManager->getThreadId()) {
-            if (propagate(threadId.value())) { return true; }
-        }
-        return false;
-    }
+    void writeStorage(std::ostream &outputStream) const override;
+    bool internalUpdate() override;
 
     friend class SequentialTSOInternalUpdateManager;
     friend class RandomTSOInternalUpdateManager;
@@ -152,19 +81,11 @@ class SequentialTSOInternalUpdateManager : public InternalUpdateManager {
     size_t m_nextThreadId = 0;
     size_t m_maxThreadId = 0;
 
-    void reset(const TotalStoreOrderStorageManager &storageManager) override {
-        m_nextThreadId = 0;
-        m_maxThreadId = storageManager.m_threadBuffers.size();
-    }
-
-    std::optional<size_t> getThreadId() override {
-        if (m_nextThreadId < m_maxThreadId) { return m_nextThreadId++; }
-        return {};
-    }
+    void reset(const TotalStoreOrderStorageManager &storageManager) override;
+    std::optional<size_t> getThreadId() override;
 
 public:
     SequentialTSOInternalUpdateManager() = default;
-
 };
 
 class RandomTSOInternalUpdateManager : public InternalUpdateManager {
@@ -172,24 +93,12 @@ class RandomTSOInternalUpdateManager : public InternalUpdateManager {
     size_t m_nextThreadIdIndex;
     std::mt19937 m_randomGenerator;
 
-    void reset(const TotalStoreOrderStorageManager &storageManager) override {
-        m_threadIds.resize(storageManager.m_threadBuffers.size());
-        for (int i = 0; i < m_threadIds.size(); ++i) {
-            m_threadIds[i] = i;
-        }
-        std::shuffle(m_threadIds.begin(), m_threadIds.end(), m_randomGenerator);
-        m_nextThreadIdIndex = 0;
-    }
-
-    std::optional<size_t> getThreadId() override {
-        if (m_nextThreadIdIndex < m_threadIds.size()) {
-            return m_threadIds[m_nextThreadIdIndex++];
-        }
-        return {};
-    }
+    void reset(const TotalStoreOrderStorageManager &storageManager) override;
+    std::optional<size_t> getThreadId() override;
 
 public:
-    explicit RandomTSOInternalUpdateManager(unsigned long seed) : m_randomGenerator(seed), m_nextThreadIdIndex(0) {}
+    explicit RandomTSOInternalUpdateManager(unsigned long seed)
+        : m_randomGenerator(seed), m_nextThreadIdIndex(0) {}
 };
 
 } // namespace wmm
