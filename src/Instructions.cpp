@@ -1,5 +1,6 @@
 #include "Instructions.h"
 #include "Parser.h"
+#include <algorithm>
 #include <sstream>
 
 namespace wmm {

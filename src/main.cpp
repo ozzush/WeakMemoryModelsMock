@@ -1,7 +1,9 @@
+#include "Executor.h"
 #include "Parser.h"
 #include "Program.h"
+#include "SequentialConsistencyStorageManager.h"
 #include "StorageManager.h"
-#include "ThreadManager.h"
+#include "TotalStoreOrderStorageManager.h"
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -19,29 +21,10 @@ int main(int argc, char *argv[]) {
         programs.push_back(Parser::parseFromStream(filestream));
     }
 
-    StorageManagerPtr storageManager(new FakeStorageManager());
-    ThreadManager threadManager(programs, storageManager, 10);
+    std::random_device seedGen;
+    StorageManagerPtr storageManager(new TotalStoreOrderStorageManager<SequentialTSOInternalUpdateManager>(10, programs.size()));
+    RandomExecutor executor(programs, storageManager, 10, seedGen());
 
-    while (true) {
-        bool successAny = false;
-        for (size_t i = 0; i < programs.size(); ++i) {
-            successAny |= threadManager.evaluateThread(i);
-        }
-        if (!successAny) {
-            std::cout << (threadManager.allThreadsCompleted()
-                                  ? "All threads completed successfully\n"
-                                  : "All threads are blocked\n");
-            auto localStorages = threadManager.getThreadLocalStorages();
-            std::cout << "Thread-local storages:\n";
-            for (size_t i = 0; i < localStorages.size(); ++i) {
-                std::cout << "t" << i << ": ";
-                auto storage = localStorages[i].getStorage();
-                for (auto elm : storage) {
-                    std::cout << elm << ' ';
-                }
-                std::cout << '\n';
-            }
-            return 0;
-        }
-    }
+    while (executor.executeThread());
+    executor.writeState(std::cout);
 }

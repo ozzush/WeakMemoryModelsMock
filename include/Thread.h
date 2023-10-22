@@ -10,17 +10,17 @@
 namespace wmm {
 
 class Thread {
-    Program m_program;
+    const Program m_program;
     Storage m_localStorage;
     StorageManagerPtr m_storageManager;
     size_t m_currentInstruction = 0;
-    size_t m_id;
-
 public:
+    const size_t id;
+
     Thread(Program program, StorageManagerPtr storageManager, size_t threadId,
            size_t localStorageSize = 100)
         : m_program(std::move(program)), m_localStorage(localStorageSize),
-          m_storageManager(std::move(storageManager)), m_id(threadId) {}
+          m_storageManager(std::move(storageManager)), id(threadId) {}
 
     bool evaluateInstruction();
 

@@ -22,4 +22,14 @@ std::vector<int32_t> Storage::getStorage() const  {
     return m_storage;
 }
 
+std::ostream &operator<<(std::ostream &os, const Storage &storage) {
+    bool isFirstIteration = true;
+    for (auto elm: storage.m_storage) {
+        if (!isFirstIteration) os << ' ';
+        os << elm;
+        isFirstIteration = false;
+    }
+    return os;
+}
+
 } // namespace wmm

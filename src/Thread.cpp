@@ -57,7 +57,7 @@ bool Thread::evaluateInstruction() {
         case InstructionAction::Load: {
             auto cmd = *std::dynamic_pointer_cast<Load>(instruction);
             size_t address = m_localStorage.load(cmd.addressRegister);
-            int32_t value = m_storageManager->load(m_id, address, cmd.mode);
+            int32_t value = m_storageManager->load(id, address, cmd.mode);
             m_localStorage.store(cmd.resultRegister, value);
             break;
         }
@@ -65,7 +65,7 @@ bool Thread::evaluateInstruction() {
             auto cmd = *std::dynamic_pointer_cast<Store>(instruction);
             size_t address = m_localStorage.load(cmd.addressRegister);
             int32_t value = m_localStorage.load(cmd.valueRegister);
-            m_storageManager->store(m_id, address, value, cmd.mode);
+            m_storageManager->store(id, address, value, cmd.mode);
             break;
         }
         case InstructionAction::CompareAndSwap: {
@@ -73,7 +73,7 @@ bool Thread::evaluateInstruction() {
             size_t address = m_localStorage.load(cmd.addressRegister);
             int32_t expectedValue = m_localStorage.load(cmd.expectedValueRegister);
             int32_t newValue = m_localStorage.load(cmd.newValueRegister);
-            m_storageManager->compareAndSwap(m_id, address, expectedValue, newValue, cmd.mode);
+            m_storageManager->compareAndSwap(id, address, expectedValue, newValue, cmd.mode);
             break;
         }
         case InstructionAction::FetchAndIncrement: {
@@ -81,12 +81,12 @@ bool Thread::evaluateInstruction() {
                     *std::dynamic_pointer_cast<FetchAndIncrement>(instruction);
             size_t address = m_localStorage.load(cmd.addressRegister);
             int32_t increment = m_localStorage.load(cmd.incrementRegister);
-            m_storageManager->fetchAndIncrement(m_id, address, increment, cmd.mode);
+            m_storageManager->fetchAndIncrement(id, address, increment, cmd.mode);
             break;
         }
         case InstructionAction::Fence: {
             auto cmd = *std::dynamic_pointer_cast<Fence>(instruction);
-            m_storageManager->fence(m_id, cmd.memoryAccessMode);
+            m_storageManager->fence(id, cmd.memoryAccessMode);
             break;
         }
     }

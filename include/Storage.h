@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cstdint>
+#include <ostream>
 #include <vector>
 
 namespace wmm {
@@ -19,6 +20,8 @@ public:
     explicit Storage(size_t size) : m_storage(size) {}
 
     [[nodiscard]] std::vector<int32_t> getStorage() const;
+
+    friend std::ostream& operator<<(std::ostream& os, const Storage& storage);
 };
 
 } // namespace wmm

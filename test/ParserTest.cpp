@@ -23,9 +23,7 @@ TEST_SUITE("Parser") {
         auto [label, instruction] = Parser::parseLine(command);
         CHECK_EQ(command, instruction->toString());
     }
-}
 
-TEST_SUITE("Expression") {
     TEST_CASE("Addition") {
         auto [label, instruction] = Parser::parseLine("1 = 2 + 3");
         auto realInstruction =

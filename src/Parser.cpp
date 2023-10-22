@@ -193,7 +193,9 @@ Program Parser::parseFromStream(std::istream &stream) {
                 }
                 labelMapping[label.value()] = program.size();
             }
-            program.push_back(instruction);
+            if (instruction) {
+                program.push_back(instruction);
+            }
         } catch (const std::exception &e) {
             throw ParsingError(linesRead, e.what());
         }

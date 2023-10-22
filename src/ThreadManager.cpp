@@ -1,4 +1,5 @@
 #include "ThreadManager.h"
+#include <algorithm>
 
 namespace wmm {
 
@@ -29,6 +30,16 @@ std::vector<Storage> ThreadManager::getThreadLocalStorages() const {
         storages.push_back(thread.getLocalStorage());
     }
     return storages;
+}
+
+std::vector<size_t> ThreadManager::unfinishedThreads() const {
+    std::vector<size_t> unfinishedThreads;
+    for (const auto &thread : m_threads) {
+        if (!thread.isFinished()) {
+            unfinishedThreads.push_back(thread.id);
+        }
+    }
+    return unfinishedThreads;
 }
 
 } // namespace wmm

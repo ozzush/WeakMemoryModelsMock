@@ -19,6 +19,8 @@ public:
     [[nodiscard]] bool allThreadsCompleted() const;
 
     [[nodiscard]] std::vector<Storage> getThreadLocalStorages() const;
+
+    [[nodiscard]] std::vector<size_t> unfinishedThreads() const;
 };
 
 } // namespace wmm
