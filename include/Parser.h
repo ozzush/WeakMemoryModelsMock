@@ -4,14 +4,14 @@
 
 #pragma once
 
-#include "Instructions.h"
-#include "Program.h"
-
 #include <map>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <optional>
+
+#include "Instructions.h"
+#include "Program.h"
 
 namespace wmm::program {
 
@@ -62,9 +62,7 @@ class Parser {
 
 public:
     static std::tuple<std::optional<Label>, InstructionPtr> parseLine(const std::string &line);
-
     static Program parseFromStream(std::istream &stream);
-
     static Program parseFromString(const std::string &input);
 };
 

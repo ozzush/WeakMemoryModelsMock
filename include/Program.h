@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Instructions.h"
 #include <memory>
 #include <unordered_map>
+
+#include "Instructions.h"
 
 namespace wmm::program {
 
@@ -17,7 +18,6 @@ public:
     getInstruction(size_t instruction) const;
 
     [[nodiscard]] size_t getLabelMapping(size_t label) const;
-
     [[nodiscard]] size_t size() const;
 
     Program(std::vector<std::shared_ptr<Instruction>> &&program,

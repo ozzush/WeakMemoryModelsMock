@@ -7,7 +7,6 @@
 #include <ostream>
 #include <memory>
 
-
 namespace wmm::storage {
 
 class StorageManagerInterface;
@@ -26,24 +25,9 @@ public:
     explicit Logger(std::ostream outputStream, LogLevel logLevel = LogLevel::INFO)
         : m_outputStream(outputStream), m_logLevel(logLevel) {}
 
-    void info(const std::string &log) {
-        if (m_logLevel <= LogLevel::INFO) {
-            m_outputStream.get() << "INFO: " << log << std::endl;
-        }
-    }
-
-    void warning(const std::string &log) {
-        if (m_logLevel <= LogLevel::WARNING) {
-            m_outputStream.get() << "WARN: " << log << std::endl;
-        }
-    }
-
-    void error(const std::string &log) {
-        if (m_logLevel <= LogLevel::ERROR) {
-            m_outputStream.get() << "ERROR: " << log << std::endl;
-        }
-    }
-
+    void info(const std::string &log);
+    void warning(const std::string &log);
+    void error(const std::string &log);
     void storage(const StorageManagerInterface &storage);
 };
 

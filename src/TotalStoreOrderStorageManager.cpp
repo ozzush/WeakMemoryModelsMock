@@ -2,8 +2,9 @@
 // Created by veronika on 21.10.23.
 //
 
-#include "TotalStoreOrderStorageManager.h"
 #include <ostream>
+
+#include "TotalStoreOrderStorageManager.h"
 
 namespace wmm::storage {
 

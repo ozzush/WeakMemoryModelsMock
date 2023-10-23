@@ -2,8 +2,9 @@
 // Created by veronika on 22.10.23.
 //
 
-#include "Executor.h"
 #include <sstream>
+
+#include "Executor.h"
 
 namespace wmm::executor {
 
