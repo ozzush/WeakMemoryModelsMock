@@ -17,7 +17,7 @@ protected:
     storage::StorageManagerPtr m_storageManager;
 
     virtual bool executeThread() = 0;
-    bool executeInternalMemoryUpdate() { return m_storageManager->internalUpdate(); };
+    virtual bool executeInternalMemoryUpdate() { return m_storageManager->internalUpdate(); };
 
 public:
     virtual bool execute() = 0;
@@ -44,6 +44,21 @@ public:
                    size_t threadLocalStorageSize, unsigned long seed)
         : ExecutorInterface(programs, storageManager, threadLocalStorageSize),
           m_randomGenerator(seed) {}
+
+    bool execute() override;
+
+    void writeState(std::ostream &outputStream) const override;
+};
+
+class InteractiveExecutor : public ExecutorInterface {
+    bool executeThread() override;
+    bool executeInternalMemoryUpdate() override;
+
+public:
+    InteractiveExecutor(const std::vector<program::Program> &programs,
+                   const storage::StorageManagerPtr &storageManager,
+                   size_t threadLocalStorageSize)
+        : ExecutorInterface(programs, storageManager, threadLocalStorageSize) {}
 
     bool execute() override;
 

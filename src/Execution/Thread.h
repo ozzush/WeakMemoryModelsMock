@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "Program.h"
 #include "Storage.h"
 #include "StorageManager.h"
@@ -24,6 +26,8 @@ public:
           m_storageManager(std::move(storageManager)), id(threadId) {}
 
     bool evaluateInstruction();
+
+    std::shared_ptr<program::Instruction> getCurrentInstruction() const;
 
     bool isFinished() const { return m_currentInstruction == m_program.size(); }
 

@@ -12,21 +12,32 @@
 #include "Storage.h"
 #include "StorageManager.h"
 
-namespace wmm::storage::TSO {
+namespace wmm::storage::PSO {
 
-struct StoreInstruction {
-    const size_t address;
-    const int32_t value;
-};
-
-class Buffer {
-    std::deque<StoreInstruction> m_buffer;
+class AddressBuffer {
+    std::deque<int32_t> m_buffer;
 
 public:
-    void push(StoreInstruction instruction);
-    std::optional<StoreInstruction> pop();
+    void push(int32_t value);
+    [[nodiscard]] std::optional<int32_t> last() const;
+    std::optional<int32_t> pop();
+    [[nodiscard]] bool empty() const;
+
+    [[nodiscard]] std::string str() const;
+};
+
+class ThreadBuffer {
+    std::vector<AddressBuffer> m_buffer;
+
+public:
+    void push(size_t address, int32_t value);
+    std::optional<int32_t> pop(size_t address);
     std::optional<int32_t> find(size_t address);
-    friend std::ostream &operator<<(std::ostream &os, const Buffer &buffer);
+    const AddressBuffer &getBuffer(size_t address) const;
+    [[nodiscard]] std::string str(size_t address) const;
+    [[nodiscard]] std::string str() const;
+
+    explicit ThreadBuffer(size_t size) : m_buffer(size) {}
 };
 
 class InternalUpdateManager;
@@ -35,24 +46,24 @@ class RandomInternalUpdateManager;
 
 using InternalUpdateManagerPtr = std::unique_ptr<InternalUpdateManager>;
 
-class TotalStoreOrderStorageManager : public StorageManagerInterface {
+class PartialStoreOrderStorageManager : public StorageManagerInterface {
     Storage m_storage;
-    std::vector<Buffer> m_threadBuffers;
+    std::vector<ThreadBuffer> m_threadBuffers;
     InternalUpdateManagerPtr m_internalUpdateManager;
 
-    void flushBuffer(size_t threadId);
-    bool propagate(size_t threadId);
+    void flushBuffer(size_t threadId, size_t address);
+    bool propagate(size_t threadId, size_t address);
 
-    void logBuffer(size_t threadId);
-    void logStorage();
+    void logBuffer(size_t threadId, size_t address) const;
+    void logStorage() const;
 
 public:
-    TotalStoreOrderStorageManager(
+    PartialStoreOrderStorageManager(
             size_t storageSize, size_t nOfThreads,
             InternalUpdateManagerPtr &&internalUpdateManager,
             LoggerPtr &&logger = std::make_unique<FakeStorageLogger>())
         : StorageManagerInterface(std::move(logger)), m_storage(storageSize),
-          m_threadBuffers(nOfThreads),
+          m_threadBuffers(nOfThreads, ThreadBuffer(storageSize)),
           m_internalUpdateManager(std::move(internalUpdateManager)) {}
 
     int32_t load(size_t threadId, size_t address,
@@ -74,10 +85,13 @@ public:
 };
 
 class InternalUpdateManager {
-    virtual void reset(const TotalStoreOrderStorageManager &storageManager) = 0;
-    virtual std::optional<size_t> getThreadId() = 0;
+    virtual void
+    reset(const PartialStoreOrderStorageManager &storageManager) = 0;
 
-    friend class TotalStoreOrderStorageManager;
+    virtual std::optional<std::pair<size_t, size_t>>
+    getThreadIdAndAddress() = 0;
+
+    friend class PartialStoreOrderStorageManager;
 
 public:
     virtual ~InternalUpdateManager() = default;
@@ -86,25 +100,27 @@ public:
 class SequentialInternalUpdateManager : public InternalUpdateManager {
     size_t m_nextThreadId = 0;
     size_t m_maxThreadId = 0;
+    size_t m_nextAddress = 0;
+    size_t m_maxAddress = 0;
 
-    void reset(const TotalStoreOrderStorageManager &storageManager) override;
-    std::optional<size_t> getThreadId() override;
+    void reset(const PartialStoreOrderStorageManager &storageManager) override;
+    std::optional<std::pair<size_t, size_t>> getThreadIdAndAddress() override;
 
 public:
     SequentialInternalUpdateManager() = default;
 };
 
 class RandomInternalUpdateManager : public InternalUpdateManager {
-    std::vector<size_t> m_threadIds;
-    size_t m_nextThreadIdIndex;
+    std::vector<std::pair<size_t, size_t>> m_threadIdAndAddressPairs;
+    size_t m_nextThreadIdAndAddressIndex;
     std::mt19937 m_randomGenerator;
 
-    void reset(const TotalStoreOrderStorageManager &storageManager) override;
-    std::optional<size_t> getThreadId() override;
+    void reset(const PartialStoreOrderStorageManager &storageManager) override;
+    std::optional<std::pair<size_t, size_t>> getThreadIdAndAddress() override;
 
 public:
     explicit RandomInternalUpdateManager(unsigned long seed)
-        : m_randomGenerator(seed), m_nextThreadIdIndex(0) {}
+        : m_randomGenerator(seed), m_nextThreadIdAndAddressIndex(0) {}
 };
 
-} // namespace wmm::storage::TSO
+} // namespace wmm::storage::PSO

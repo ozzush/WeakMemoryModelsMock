@@ -9,8 +9,12 @@
 using namespace wmm::storage;
 
 TEST_SUITE("Total Store Order") {
+    using TSO::InternalUpdateManagerPtr;
+    using TSO::SequentialInternalUpdateManager;
+    using TSO::TotalStoreOrderStorageManager;
+
     TEST_CASE("Load and Store") {
-        InternalUpdateManagerPtr internalUpdateManager(new SequentialTSOInternalUpdateManager());
+        InternalUpdateManagerPtr internalUpdateManager(new SequentialInternalUpdateManager());
         TotalStoreOrderStorageManager storageManager(10, 2, std::move(internalUpdateManager));
 
         SUBCASE("Load from uninitialized storage should return 0") {
@@ -34,7 +38,7 @@ TEST_SUITE("Total Store Order") {
     }
 
     TEST_CASE("CompareAndSwap") {
-        InternalUpdateManagerPtr internalUpdateManager(new SequentialTSOInternalUpdateManager());
+        InternalUpdateManagerPtr internalUpdateManager(new SequentialInternalUpdateManager());
         TotalStoreOrderStorageManager storageManager(10, 2, std::move(internalUpdateManager));
 
         storageManager.store(0, 0, 42, MemoryAccessMode::Relaxed);
@@ -51,7 +55,7 @@ TEST_SUITE("Total Store Order") {
     }
 
     TEST_CASE("FetchAndIncrement") {
-        InternalUpdateManagerPtr internalUpdateManager(new SequentialTSOInternalUpdateManager());
+        InternalUpdateManagerPtr internalUpdateManager(new SequentialInternalUpdateManager());
         TotalStoreOrderStorageManager storageManager(10, 2, std::move(internalUpdateManager));
 
         SUBCASE("FetchAndIncrement doesn't ignore buffer") {
@@ -68,7 +72,7 @@ TEST_SUITE("Total Store Order") {
     }
 
     TEST_CASE("Fence") {
-        InternalUpdateManagerPtr internalUpdateManager(new SequentialTSOInternalUpdateManager());
+        InternalUpdateManagerPtr internalUpdateManager(new SequentialInternalUpdateManager());
         TotalStoreOrderStorageManager storageManager(10, 2, std::move(internalUpdateManager));
 
         SUBCASE("Fence flushes buffer") {
@@ -91,6 +95,7 @@ TEST_SUITE("Total Store Order") {
 }
 
 TEST_SUITE("Sequential Consistency") {
+    using SC::SequentialConsistencyStorageManager;
     TEST_CASE("Load and Store") {
         SequentialConsistencyStorageManager storageManager(10);
 

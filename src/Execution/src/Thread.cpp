@@ -105,5 +105,8 @@ bool Thread::evaluateInstruction() {
     m_currentInstruction = nextInstruction;
     return true;
 }
+std::shared_ptr<program::Instruction> Thread::getCurrentInstruction() const {
+    return m_program.getInstruction(m_currentInstruction);
+}
 
 } // namespace wmm::executor

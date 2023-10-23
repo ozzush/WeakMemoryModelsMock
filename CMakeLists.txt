@@ -16,6 +16,7 @@ target_include_directories(storage_lib PUBLIC src/Storage)
 target_sources(storage_lib PUBLIC
         src/Storage/src/Storage.cpp
         src/Storage/src/TotalStoreOrderStorageManager.cpp
+        src/Storage/src/PartialStoreOrderStorageManager.cpp
         src/Storage/src/SequentialConsistencyStorageManager.cpp
         src/Storage/src/StorageLogger.cpp
         )

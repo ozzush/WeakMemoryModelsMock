@@ -7,11 +7,11 @@
 
 #include "SequentialConsistencyStorageManager.h"
 
-namespace wmm::storage {
+namespace wmm::storage::SC {
 
 void SequentialConsistencyStorageManager::logStorage() {
     std::stringstream storageStream;
-    storageStream << m_storage;
+    storageStream << m_storage.str();
     m_storageLogger->info(
             std::format("STATE:  storage: {}", storageStream.str()));
 }
@@ -62,7 +62,7 @@ void SequentialConsistencyStorageManager::fence(size_t threadId,
 
 void SequentialConsistencyStorageManager::writeStorage(
         std::ostream &outputStream) const {
-    outputStream << "Shared storage: " << m_storage << '\n';
+    outputStream << "Shared storage: " << m_storage.str() << '\n';
 }
 
 

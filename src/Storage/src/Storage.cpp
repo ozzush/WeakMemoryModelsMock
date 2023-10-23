@@ -21,15 +21,15 @@ void Storage::store(size_t address, int32_t value) {
 std::vector<int32_t> Storage::getStorage() const  {
     return m_storage;
 }
-
-std::ostream &operator<<(std::ostream &os, const Storage &storage) {
+std::string Storage::str() const {
+    std::string result;
     bool isFirstIteration = true;
-    for (auto elm: storage.m_storage) {
-        if (!isFirstIteration) os << ' ';
-        os << elm;
+    for (auto elm: m_storage) {
+        if (!isFirstIteration) result += ' ';
+        result += std::to_string(elm);
         isFirstIteration = false;
     }
-    return os;
+    return result;
 }
 
 } // namespace wmm

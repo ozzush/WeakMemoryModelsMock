@@ -14,13 +14,13 @@ std::string toString(MemoryAccessMode mode) {
             ->first;
 }
 
-std::string StoreConstInRegister::toString() const {
+std::string StoreConstInRegister::str() const {
     std::stringstream output;
     output << storeRegister << " = " << value;
     return output.str();
 }
 
-std::string StoreExprInRegister::toString() const {
+std::string StoreExprInRegister::str() const {
     std::stringstream output;
     std::string binOperation;
     switch (operation) {
@@ -42,13 +42,13 @@ std::string StoreExprInRegister::toString() const {
     return output.str();
 }
 
-std::string Goto::toString() const {
+std::string Goto::str() const {
     std::stringstream output;
     output << "if " << conditionRegister << " goto " << label;
     return output.str();
 }
 
-std::string Load::toString() const {
+std::string Load::str() const {
     std::stringstream output;
     std::string modeString = program::toString(mode);
     output << "load " + modeString + " #" << addressRegister << " "
@@ -56,7 +56,7 @@ std::string Load::toString() const {
     return output.str();
 }
 
-std::string Store::toString() const {
+std::string Store::str() const {
     std::stringstream output;
     std::string modeString = program::toString(mode);
     output << "store " + modeString + " #" << addressRegister << " "
@@ -64,7 +64,7 @@ std::string Store::toString() const {
     return output.str();
 }
 
-std::string CompareAndSwap::toString() const {
+std::string CompareAndSwap::str() const {
     std::stringstream output;
     std::string modeString = program::toString(mode);
     output << "cas " + modeString + " #" << addressRegister << " "
@@ -72,7 +72,7 @@ std::string CompareAndSwap::toString() const {
     return output.str();
 }
 
-std::string FetchAndIncrement::toString() const {
+std::string FetchAndIncrement::str() const {
     std::stringstream output;
     std::string modeString = program::toString(mode);
     output << "fei " + modeString + " #" << addressRegister << " "
@@ -80,7 +80,7 @@ std::string FetchAndIncrement::toString() const {
     return output.str();
 }
 
-std::string Fence::toString() const {
+std::string Fence::str() const {
     std::stringstream output;
     std::string modeString = program::toString(memoryAccessMode);
     output << "fence " + modeString;

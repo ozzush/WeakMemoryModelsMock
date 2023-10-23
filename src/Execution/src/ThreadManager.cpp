@@ -15,7 +15,10 @@ ThreadManager::ThreadManager(const std::vector<program::Program> &programs,
 }
 
 bool ThreadManager::evaluateThread(size_t threadId) {
-    return m_threads.at(threadId).evaluateInstruction();
+    evaluateThreadLocalInstructions(threadId);
+    bool returnValue = m_threads.at(threadId).evaluateInstruction();
+    evaluateThreadLocalInstructions(threadId);
+    return returnValue;
 }
 
 bool ThreadManager::allThreadsCompleted() const {
@@ -34,12 +37,35 @@ std::vector<storage::Storage> ThreadManager::getThreadLocalStorages() const {
 
 std::vector<size_t> ThreadManager::unfinishedThreads() const {
     std::vector<size_t> unfinishedThreads;
-    for (const auto &thread : m_threads) {
-        if (!thread.isFinished()) {
-            unfinishedThreads.push_back(thread.id);
-        }
+    for (const auto &thread: m_threads) {
+        if (!thread.isFinished()) { unfinishedThreads.push_back(thread.id); }
     }
     return unfinishedThreads;
 }
 
-} // namespace wmm
+size_t ThreadManager::size() const { return m_threads.size(); }
+
+std::shared_ptr<program::Instruction>
+ThreadManager::getCurrentInstructionForThread(size_t threadId) const {
+    return m_threads.at(threadId).getCurrentInstruction();
+}
+
+void ThreadManager::evaluateThreadLocalInstructions(size_t threadId) {
+    while (auto instruction = m_threads.at(threadId).getCurrentInstruction()) {
+        switch (instruction->action) {
+            case program::InstructionAction::StoreConstInRegister:
+            case program::InstructionAction::StoreExprInRegister:
+            case program::InstructionAction::Goto:
+                m_threads[threadId].evaluateInstruction();
+                break;
+            case program::InstructionAction::Load:
+            case program::InstructionAction::Store:
+            case program::InstructionAction::CompareAndSwap:
+            case program::InstructionAction::FetchAndIncrement:
+            case program::InstructionAction::Fence:
+                return;
+        }
+    }
+}
+
+} // namespace wmm::execution

@@ -7,7 +7,7 @@
 #include "Storage.h"
 #include "StorageManager.h"
 
-namespace wmm::storage {
+namespace wmm::storage::SC {
 
 class SequentialConsistencyStorageManager : public StorageManagerInterface {
     Storage m_storage;

@@ -9,6 +9,7 @@
 #include "SequentialConsistencyStorageManager.h"
 #include "StorageManager.h"
 #include "TotalStoreOrderStorageManager.h"
+#include "PartialStoreOrderStorageManager.h"
 
 using namespace wmm::execution;
 using namespace wmm::program;
@@ -25,10 +26,10 @@ int main(int argc, char *argv[]) {
     }
 
     std::random_device seedGen;
-    InternalUpdateManagerPtr internalUpdateManager(new RandomTSOInternalUpdateManager(seedGen()));
+    TSO::InternalUpdateManagerPtr internalUpdateManager(new TSO::RandomInternalUpdateManager(seedGen()));
     LoggerPtr logger(new StorageLoggerImpl(std::cout));
-    StorageManagerPtr storageManager(new TotalStoreOrderStorageManager(10, programs.size(), std::move(internalUpdateManager), std::move(logger)));
-    RandomExecutor executor(programs, storageManager, 10, seedGen());
+    StorageManagerPtr storageManager(new TSO::TotalStoreOrderStorageManager(10, programs.size(), std::move(internalUpdateManager), std::move(logger)));
+    InteractiveExecutor executor(programs, storageManager, 10);
 
     while (executor.execute());
     executor.writeState(std::cout);

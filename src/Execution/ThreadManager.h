@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include "Instructions.h"
 #include "Program.h"
 #include "Thread.h"
 
@@ -10,6 +11,8 @@ namespace wmm::execution {
 class ThreadManager {
     std::vector<Thread> m_threads;
     storage::StorageManagerPtr m_storageManager;
+
+    void evaluateThreadLocalInstructions(size_t threadId);
 
 public:
     ThreadManager(const std::vector<program::Program> &programs,
@@ -23,6 +26,10 @@ public:
     [[nodiscard]] std::vector<storage::Storage> getThreadLocalStorages() const;
 
     [[nodiscard]] std::vector<size_t> unfinishedThreads() const;
+
+    [[nodiscard]] size_t size() const;
+
+    [[nodiscard]] std::shared_ptr<program::Instruction> getCurrentInstructionForThread(size_t threadId) const;
 };
 
 } // namespace wmm

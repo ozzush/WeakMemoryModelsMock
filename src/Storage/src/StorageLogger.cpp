@@ -33,13 +33,13 @@ void StorageLoggerImpl::info(const std::string &log) {
 
 void StorageLogger::load(size_t threadId, size_t address,
                          MemoryAccessMode accessMode, int32_t result) {
-    info(std::format("ACTION: t{} at #{}: {} load ({})", threadId, address,
+    info(std::format("ACTION: t{}#{}: {} load ({})", threadId, address,
                      toString(accessMode), result));
 };
 
 void StorageLogger::store(size_t threadId, size_t address, int32_t value,
                           MemoryAccessMode accessMode) {
-    info(std::format("ACTION: t{} at #{}: {} store {}", threadId, address,
+    info(std::format("ACTION: t{}#{}: {} store {}", threadId, address,
                      toString(accessMode), value));
 }
 
@@ -47,7 +47,7 @@ void StorageLogger::compareAndSwap(size_t threadId, size_t address,
                                    int32_t expectedValue, int32_t realValue,
                                    int32_t newValue,
                                    MemoryAccessMode accessMode) {
-    info(std::format("ACTION: t{} at #{}: {} if ({})=={} store {}", threadId,
+    info(std::format("ACTION: t{}#{}: {} if ({})=={} store {}", threadId,
                      address, toString(accessMode), realValue, expectedValue,
                      newValue));
 }
@@ -55,7 +55,7 @@ void StorageLogger::compareAndSwap(size_t threadId, size_t address,
 void StorageLogger::fetchAndIncrement(size_t threadId, size_t address,
                                       int32_t increment,
                                       MemoryAccessMode accessMode) {
-    info(std::format("ACTION: t{} at #{}: {} +{}", threadId, address,
+    info(std::format("ACTION: t{}#{}: {} +{}", threadId, address,
                      toString(accessMode), increment));
 }
 void StorageLogger::fence(size_t threadId, MemoryAccessMode accessMode) {

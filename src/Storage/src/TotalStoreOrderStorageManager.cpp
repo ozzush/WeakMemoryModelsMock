@@ -8,17 +8,13 @@
 
 #include "TotalStoreOrderStorageManager.h"
 
-namespace wmm::storage {
+namespace wmm::storage::TSO {
 
 int32_t TotalStoreOrderStorageManager::load(size_t threadId, size_t address,
                                             MemoryAccessMode accessMode) {
     auto valueFromBuffer = m_threadBuffers.at(threadId).find(address);
-    int32_t value = 0;
-    if (valueFromBuffer) {
-        value = valueFromBuffer.value();
-    } else {
-        value = m_storage.load(address);
-    }
+    int32_t value = (valueFromBuffer) ? valueFromBuffer.value()
+                                      : m_storage.load(address);
     m_storageLogger->load(threadId, address, accessMode, value);
     return value;
 }
@@ -67,7 +63,7 @@ void TotalStoreOrderStorageManager::fence(size_t threadId,
 
 void TotalStoreOrderStorageManager::writeStorage(
         std::ostream &outputStream) const {
-    outputStream << "Shared storage: " << m_storage << '\n';
+    outputStream << "Shared storage: " << m_storage.str() << '\n';
     outputStream << "Thread buffers:\n";
     for (size_t i = 0; i < m_threadBuffers.size(); ++i) {
         outputStream << 't' << i << ": " << m_threadBuffers[i] << '\n';
@@ -78,7 +74,7 @@ bool TotalStoreOrderStorageManager::propagate(size_t threadId) {
     auto instruction = m_threadBuffers.at(threadId).pop();
     if (instruction) {
         m_storage.store(instruction->address, instruction->value);
-        m_storageLogger->info(std::format("ACTION: b{}: #{}->{}", threadId,
+        m_storageLogger->info(std::format("ACTION: b{}: propagate (#{}->{})", threadId,
                                           instruction->address,
                                           instruction->value));
         logBuffer(threadId);
@@ -104,7 +100,7 @@ void TotalStoreOrderStorageManager::logBuffer(size_t threadId) {
 
 void TotalStoreOrderStorageManager::logStorage() {
     std::stringstream storageStream;
-    storageStream << m_storage;
+    storageStream << m_storage.str();
     m_storageLogger->info(
             std::format("STATE:  storage: {}", storageStream.str()));
 }
@@ -139,18 +135,18 @@ void Buffer::push(StoreInstruction instruction) {
     m_buffer.push_back(instruction);
 };
 
-void SequentialTSOInternalUpdateManager::reset(
+void SequentialInternalUpdateManager::reset(
         const TotalStoreOrderStorageManager &storageManager) {
     m_nextThreadId = 0;
     m_maxThreadId = storageManager.m_threadBuffers.size();
 }
 
-std::optional<size_t> SequentialTSOInternalUpdateManager::getThreadId() {
+std::optional<size_t> SequentialInternalUpdateManager::getThreadId() {
     if (m_nextThreadId < m_maxThreadId) { return m_nextThreadId++; }
     return {};
 }
 
-void RandomTSOInternalUpdateManager::reset(
+void RandomInternalUpdateManager::reset(
         const TotalStoreOrderStorageManager &storageManager) {
     m_threadIds.resize(storageManager.m_threadBuffers.size());
     for (int i = 0; i < m_threadIds.size(); ++i) { m_threadIds[i] = i; }
@@ -158,11 +154,11 @@ void RandomTSOInternalUpdateManager::reset(
     m_nextThreadIdIndex = 0;
 }
 
-std::optional<size_t> RandomTSOInternalUpdateManager::getThreadId() {
+std::optional<size_t> RandomInternalUpdateManager::getThreadId() {
     if (m_nextThreadIdIndex < m_threadIds.size()) {
         return m_threadIds[m_nextThreadIdIndex++];
     }
     return {};
 }
 
-} // namespace wmm::storage
+} // namespace wmm::storage::TSO
