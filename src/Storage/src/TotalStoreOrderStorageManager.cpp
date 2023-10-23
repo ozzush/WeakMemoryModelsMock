@@ -12,10 +12,15 @@ namespace wmm::storage {
 
 int32_t TotalStoreOrderStorageManager::load(size_t threadId, size_t address,
                                             MemoryAccessMode accessMode) {
-    m_storageLogger->load(threadId, address, accessMode);
     auto valueFromBuffer = m_threadBuffers.at(threadId).find(address);
-    if (valueFromBuffer) { return valueFromBuffer.value(); }
-    return m_storage.load(address);
+    int32_t value = 0;
+    if (valueFromBuffer) {
+        value = valueFromBuffer.value();
+    } else {
+        value = m_storage.load(address);
+    }
+    m_storageLogger->load(threadId, address, accessMode, value);
+    return value;
 }
 
 void TotalStoreOrderStorageManager::store(size_t threadId, size_t address,
@@ -30,9 +35,9 @@ void TotalStoreOrderStorageManager::compareAndSwap(
         size_t threadId, size_t address, int32_t expectedValue,
         int32_t newValue, MemoryAccessMode accessMode) {
     flushBuffer(threadId);
-    m_storageLogger->compareAndSwap(threadId, address, expectedValue, newValue,
-                                    accessMode);
     auto value = m_storage.load(address);
+    m_storageLogger->compareAndSwap(threadId, address, expectedValue, value,
+                                    newValue, accessMode);
     if (value == expectedValue) {
         m_storage.store(address, newValue);
         logStorage();
@@ -100,7 +105,8 @@ void TotalStoreOrderStorageManager::logBuffer(size_t threadId) {
 void TotalStoreOrderStorageManager::logStorage() {
     std::stringstream storageStream;
     storageStream << m_storage;
-    m_storageLogger->info(std::format("STATE:  storage: {}", storageStream.str()));
+    m_storageLogger->info(
+            std::format("STATE:  storage: {}", storageStream.str()));
 }
 
 std::optional<StoreInstruction> Buffer::pop() {

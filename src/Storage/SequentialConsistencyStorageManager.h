@@ -12,15 +12,22 @@ namespace wmm::storage {
 class SequentialConsistencyStorageManager : public StorageManagerInterface {
     Storage m_storage;
 
+    void logStorage();
+
 public:
-    explicit SequentialConsistencyStorageManager(size_t storageSize,
-                                                 storage::LoggerPtr &&logger)
+    explicit SequentialConsistencyStorageManager(
+            size_t storageSize,
+            storage::LoggerPtr &&logger = std::make_unique<FakeStorageLogger>())
         : StorageManagerInterface(std::move(logger)), m_storage(storageSize) {}
 
-    int32_t load(size_t threadId, size_t address, MemoryAccessMode accessMode) override;
-    void store(size_t threadId, size_t address, int32_t value, MemoryAccessMode accessMode) override;
-    void compareAndSwap(size_t threadId, size_t address, int32_t expectedValue, int32_t newValue, MemoryAccessMode accessMode) override;
-    void fetchAndIncrement(size_t threadId, size_t address, int32_t increment, MemoryAccessMode accessMode) override;
+    int32_t load(size_t threadId, size_t address,
+                 MemoryAccessMode accessMode) override;
+    void store(size_t threadId, size_t address, int32_t value,
+               MemoryAccessMode accessMode) override;
+    void compareAndSwap(size_t threadId, size_t address, int32_t expectedValue,
+                        int32_t newValue, MemoryAccessMode accessMode) override;
+    void fetchAndIncrement(size_t threadId, size_t address, int32_t increment,
+                           MemoryAccessMode accessMode) override;
     void fence(size_t threadId, MemoryAccessMode accessMode) override;
 
     [[nodiscard]] Storage getStorage() const override { return m_storage; }
@@ -28,5 +35,4 @@ public:
     void writeStorage(std::ostream &outputStream) const override;
 };
 
-} // namespace wmm
-
+} // namespace wmm::storage
