@@ -73,7 +73,7 @@ bool TotalStoreOrderStorageManager::propagate(size_t threadId) {
     auto instruction = m_threadBuffers.at(threadId).pop();
     if (instruction) {
         m_storage.store(instruction->address, instruction->value);
-        m_storageLogger->info(std::format("ACTION: t{} buffer: #{}->{}", threadId,
+        m_storageLogger->info(std::format("ACTION: b{}: #{}->{}", threadId,
                                           instruction->address,
                                           instruction->value));
         logBuffer(threadId);
@@ -94,13 +94,13 @@ void TotalStoreOrderStorageManager::logBuffer(size_t threadId) {
     std::stringstream bufferStream;
     bufferStream << m_threadBuffers.at(threadId);
     m_storageLogger->info(
-            std::format("STATE: t{} buffer: {}", threadId, bufferStream.str()));
+            std::format("STATE:  b{}: {}", threadId, bufferStream.str()));
 }
 
 void TotalStoreOrderStorageManager::logStorage() {
     std::stringstream storageStream;
     storageStream << m_storage;
-    m_storageLogger->info(std::format("STATE: storage: {}", storageStream.str()));
+    m_storageLogger->info(std::format("STATE:  storage: {}", storageStream.str()));
 }
 
 std::optional<StoreInstruction> Buffer::pop() {
