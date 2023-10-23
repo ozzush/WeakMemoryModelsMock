@@ -31,7 +31,7 @@ public:
 
     bool isFinished() const { return m_currentInstruction == m_program.size(); }
 
-    storage::Storage getLocalStorage() const { return m_localStorage; };
+    const storage::Storage &getLocalStorage() const { return m_localStorage; };
 };
 
 } // namespace wmm

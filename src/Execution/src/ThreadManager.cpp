@@ -15,9 +15,7 @@ ThreadManager::ThreadManager(const std::vector<program::Program> &programs,
 }
 
 bool ThreadManager::evaluateThread(size_t threadId) {
-    evaluateThreadLocalInstructions(threadId);
     bool returnValue = m_threads.at(threadId).evaluateInstruction();
-    evaluateThreadLocalInstructions(threadId);
     return returnValue;
 }
 
@@ -33,6 +31,10 @@ std::vector<storage::Storage> ThreadManager::getThreadLocalStorages() const {
         storages.push_back(thread.getLocalStorage());
     }
     return storages;
+}
+
+const storage::Storage &ThreadManager::getThreadLocalStorage(size_t threadId) const {
+    return m_threads.at(threadId).getLocalStorage();
 }
 
 std::vector<size_t> ThreadManager::unfinishedThreads() const {

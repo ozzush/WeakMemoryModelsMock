@@ -2,6 +2,7 @@
 // Created by veronika on 22.10.23.
 //
 
+#include <format>
 #include <iostream>
 #include <sstream>
 
@@ -27,15 +28,14 @@ void RandomExecutor::writeState(std::ostream &outputStream) const {
     for (size_t i = 0; i < localStorages.size(); ++i) {
         outputStream << "t" << i << ": ";
         auto storage = localStorages[i].getStorage();
-        for (auto elm : storage) {
-            outputStream << elm << ' ';
-        }
+        for (auto elm: storage) { outputStream << elm << ' '; }
         outputStream << '\n';
     }
 }
 
 bool RandomExecutor::execute() {
-    bool tryExecuteThreadFirst = std::uniform_int_distribution<size_t>(0, 1)(m_randomGenerator);
+    bool tryExecuteThreadFirst =
+            std::uniform_int_distribution<size_t>(0, 1)(m_randomGenerator);
     if (tryExecuteThreadFirst) {
         return executeThread() || executeInternalMemoryUpdate();
     } else {
@@ -50,9 +50,7 @@ void InteractiveExecutor::writeState(std::ostream &outputStream) const {
     for (size_t i = 0; i < localStorages.size(); ++i) {
         outputStream << "t" << i << ": ";
         auto storage = localStorages[i].getStorage();
-        for (auto elm : storage) {
-            outputStream << elm << ' ';
-        }
+        for (auto elm: storage) { outputStream << elm << ' '; }
         outputStream << '\n';
     }
 }
@@ -61,47 +59,65 @@ bool InteractiveExecutor::executeThread() {
     std::cout << "Choose thread to execute: " << '\n';
     bool allThreadsAreFinished = true;
     for (size_t threadId = 0; threadId < m_threadManager.size(); ++threadId) {
-        auto instruction = m_threadManager.getCurrentInstructionForThread(threadId);
+        m_threadManager.evaluateThreadLocalInstructions(threadId);
+        auto instruction =
+                m_threadManager.getCurrentInstructionForThread(threadId);
         if (!instruction) continue;
         allThreadsAreFinished = false;
-        std::cout << threadId << ": " + m_threadManager.getCurrentInstructionForThread(threadId)->str() << '\n';
+        std::cout << std::format(
+                             "{}: {:20} registers: {}",
+                             threadId,
+                             m_threadManager
+                                     .getCurrentInstructionForThread(threadId)
+                                     ->str(),
+                             m_threadManager.getThreadLocalStorage(threadId)
+                                     .str())
+                  << '\n';
     }
     if (allThreadsAreFinished) {
-        std::cout << "All threads have finished their execution\n";
+        std::cout << "All threads have finished their execution.\n";
         return false;
     }
     while (true) {
         size_t threadId;
         std::cout << "Enter thread id > ";
         std::cin >> threadId;
-        if (m_threadManager.evaluateThread(threadId)) {
+        if (std::cin.eof()) {
+            return false;
+        }
+        if (threadId < m_threadManager.size() && m_threadManager.evaluateThread(threadId)) {
+            m_threadManager.evaluateThreadLocalInstructions(threadId);
             return true;
         } else {
-            std::cout << "This thread can't be executed. \n";
+            std::cout << "This thread cannot be executed.\n";
         }
     }
 }
 
 bool InteractiveExecutor::execute() {
+    bool returnVal;
     while (true) {
         std::cout << "Execute user THREAD or internal MEMORY update? [T/m] > ";
-        char operation = 0;
-        std::cin >> operation;
-        if (operation == 0 || operation == 'T' || operation == 't') {
-            return executeThread() || executeInternalMemoryUpdate();
+        char operation;
+        if (!(std::cin >> operation)) { return false; }
+        if (operation == 'T' || operation == 't') {
+            returnVal = executeThread() || executeInternalMemoryUpdate();
+            break;
         } else if (operation == 'M' || operation == 'm') {
-            return executeInternalMemoryUpdate() || executeThread();
+            returnVal = executeInternalMemoryUpdate() || executeThread();
+            break;
         }
     }
-
+    m_storageManager->writeStorage(std::cout);
+    return returnVal;
 }
 
 bool InteractiveExecutor::executeInternalMemoryUpdate() {
     bool returnValue = ExecutorInterface::executeInternalMemoryUpdate();
     if (!returnValue) {
-        std::cout << "No internal memory updates could be performed. \n";
+        std::cout << "No internal memory updates could be performed.\n";
     }
     return returnValue;
 }
 
-} // namespace wmm
+} // namespace wmm::execution

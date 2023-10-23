@@ -27,7 +27,7 @@ void StorageLoggerImpl::warning(const std::string &log) {
 
 void StorageLoggerImpl::info(const std::string &log) {
     if (m_logLevel <= LogLevel::INFO) {
-        m_outputStream.get() << "INFO: " << log << std::endl;
+        m_outputStream.get() << log << std::endl;
     }
 }
 
