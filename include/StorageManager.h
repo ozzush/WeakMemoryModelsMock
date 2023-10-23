@@ -7,9 +7,9 @@
 #include <memory>
 
 #include "Instructions.h"
-#include "StorageMemoryAccessMode.h"
 #include "Storage.h"
-#include "Logger.h"
+#include "StorageLogger.h"
+#include "StorageMemoryAccessMode.h"
 
 namespace wmm::storage {
 

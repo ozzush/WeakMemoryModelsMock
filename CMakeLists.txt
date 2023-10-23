@@ -17,7 +17,7 @@ target_sources(storage_lib PUBLIC
         src/Storage.cpp
         src/TotalStoreOrderStorageManager.cpp
         src/SequentialConsistencyStorageManager.cpp
-        src/Logger.cpp
+        src/StorageLogger.cpp
         )
 
 add_library(executor_lib STATIC)

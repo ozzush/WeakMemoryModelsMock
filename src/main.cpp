@@ -26,7 +26,8 @@ int main(int argc, char *argv[]) {
 
     std::random_device seedGen;
     InternalUpdateManagerPtr internalUpdateManager(new RandomTSOInternalUpdateManager(seedGen()));
-    StorageManagerPtr storageManager(new TotalStoreOrderStorageManager(10, programs.size(), std::move(internalUpdateManager)));
+    LoggerPtr logger(new StorageLoggerImpl(std::cout));
+    StorageManagerPtr storageManager(new TotalStoreOrderStorageManager(10, programs.size(), std::move(internalUpdateManager), std::move(logger)));
     RandomExecutor executor(programs, storageManager, 10, seedGen());
 
     while (executor.execute());

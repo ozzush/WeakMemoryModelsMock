@@ -43,12 +43,16 @@ class TotalStoreOrderStorageManager : public StorageManagerInterface {
     void flushBuffer(size_t threadId);
     bool propagate(size_t threadId);
 
+    void logBuffer(size_t threadId);
+    void logStorage();
+
 public:
     TotalStoreOrderStorageManager(
             size_t storageSize, size_t nOfThreads,
-            InternalUpdateManagerPtr &&internalUpdateManager, LoggerPtr &&logger = nullptr)
+            InternalUpdateManagerPtr &&internalUpdateManager, LoggerPtr &&logger = std::make_unique<FakeStorageLogger>())
         : StorageManagerInterface(std::move(logger)), m_storage(storageSize), m_threadBuffers(nOfThreads),
-          m_internalUpdateManager(std::move(internalUpdateManager)) {}
+          m_internalUpdateManager(std::move(internalUpdateManager)) {
+    }
 
     int32_t load(size_t threadId, size_t address,
                  MemoryAccessMode accessMode) override;

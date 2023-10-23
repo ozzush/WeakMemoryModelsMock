@@ -2,7 +2,9 @@
 // Created by veronika on 21.10.23.
 //
 
+#include <format>
 #include <ostream>
+#include <sstream>
 
 #include "TotalStoreOrderStorageManager.h"
 
@@ -10,6 +12,7 @@ namespace wmm::storage {
 
 int32_t TotalStoreOrderStorageManager::load(size_t threadId, size_t address,
                                             MemoryAccessMode accessMode) {
+    m_storageLogger->load(threadId, address, accessMode);
     auto valueFromBuffer = m_threadBuffers.at(threadId).find(address);
     if (valueFromBuffer) { return valueFromBuffer.value(); }
     return m_storage.load(address);
@@ -18,15 +21,22 @@ int32_t TotalStoreOrderStorageManager::load(size_t threadId, size_t address,
 void TotalStoreOrderStorageManager::store(size_t threadId, size_t address,
                                           int32_t value,
                                           MemoryAccessMode accessMode) {
+    m_storageLogger->store(threadId, address, value, accessMode);
     m_threadBuffers.at(threadId).push({address, value});
+    logBuffer(threadId);
 }
 
 void TotalStoreOrderStorageManager::compareAndSwap(
         size_t threadId, size_t address, int32_t expectedValue,
         int32_t newValue, MemoryAccessMode accessMode) {
     flushBuffer(threadId);
+    m_storageLogger->compareAndSwap(threadId, address, expectedValue, newValue,
+                                    accessMode);
     auto value = m_storage.load(address);
-    if (value == expectedValue) { m_storage.store(address, newValue); }
+    if (value == expectedValue) {
+        m_storage.store(address, newValue);
+        logStorage();
+    }
 }
 
 void TotalStoreOrderStorageManager::flushBuffer(size_t threadId) {
@@ -37,13 +47,17 @@ void TotalStoreOrderStorageManager::fetchAndIncrement(
         size_t threadId, size_t address, int32_t increment,
         MemoryAccessMode accessMode) {
     flushBuffer(threadId);
+    m_storageLogger->fetchAndIncrement(threadId, address, increment,
+                                       accessMode);
     auto value = m_storage.load(address);
     m_storage.store(address, value + increment);
+    logStorage();
 }
 
 void TotalStoreOrderStorageManager::fence(size_t threadId,
                                           MemoryAccessMode accessMode) {
     flushBuffer(threadId);
+    m_storageLogger->fence(threadId, accessMode);
 }
 
 void TotalStoreOrderStorageManager::writeStorage(
@@ -59,6 +73,10 @@ bool TotalStoreOrderStorageManager::propagate(size_t threadId) {
     auto instruction = m_threadBuffers.at(threadId).pop();
     if (instruction) {
         m_storage.store(instruction->address, instruction->value);
+        m_storageLogger->info(std::format("ACTION: t{} buffer: #{}->{}", threadId,
+                                          instruction->address,
+                                          instruction->value));
+        logBuffer(threadId);
         return true;
     }
     return false;
@@ -70,6 +88,19 @@ bool TotalStoreOrderStorageManager::internalUpdate() {
         if (propagate(threadId.value())) { return true; }
     }
     return false;
+}
+
+void TotalStoreOrderStorageManager::logBuffer(size_t threadId) {
+    std::stringstream bufferStream;
+    bufferStream << m_threadBuffers.at(threadId);
+    m_storageLogger->info(
+            std::format("STATE: t{} buffer: {}", threadId, bufferStream.str()));
+}
+
+void TotalStoreOrderStorageManager::logStorage() {
+    std::stringstream storageStream;
+    storageStream << m_storage;
+    m_storageLogger->info(std::format("STATE: storage: {}", storageStream.str()));
 }
 
 std::optional<StoreInstruction> Buffer::pop() {
@@ -92,7 +123,7 @@ std::ostream &operator<<(std::ostream &os, const Buffer &buffer) {
     bool isFirstIteration = true;
     for (auto instruction: buffer.m_buffer) {
         if (!isFirstIteration) os << ' ';
-        os << instruction.address << "->" << instruction.value;
+        os << std::format("#{}->{}", instruction.address, instruction.value);
         isFirstIteration = false;
     }
     return os;
