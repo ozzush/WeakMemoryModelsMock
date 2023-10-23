@@ -1,7 +1,7 @@
-#include "ThreadManager.h"
+#include "../ThreadManager.h"
 #include <algorithm>
 
-namespace wmm::executor {
+namespace wmm::execution {
 
 ThreadManager::ThreadManager(const std::vector<program::Program> &programs,
                              storage::StorageManagerPtr storageManager,

@@ -2,9 +2,9 @@
 // Created by veronika on 22.10.23.
 //
 
-#include "StorageManager.h"
-#include "SequentialConsistencyStorageManager.h"
-#include "TotalStoreOrderStorageManager.h"
+#include "../src/Storage/StorageManager.h"
+#include "../src/Storage/SequentialConsistencyStorageManager.h"
+#include "../src/Storage/TotalStoreOrderStorageManager.h"
 #include "doctest.h"
 
 using namespace wmm::storage;

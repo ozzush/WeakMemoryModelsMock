@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include "Program.h"
-#include "Storage.h"
-#include "StorageManager.h"
+#include "../Program/Program.h"
+#include "../Storage/Storage.h"
+#include "../Storage/StorageManager.h"
 
-namespace wmm::executor {
+namespace wmm::execution {
 
 class Thread {
     const program::Program m_program;

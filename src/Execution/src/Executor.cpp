@@ -4,9 +4,9 @@
 
 #include <sstream>
 
-#include "Executor.h"
+#include "../Executor.h"
 
-namespace wmm::executor {
+namespace wmm::execution {
 
 bool RandomExecutor::executeThread() {
     auto unfinishedThreads = m_threadManager.unfinishedThreads();

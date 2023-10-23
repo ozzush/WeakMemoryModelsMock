@@ -7,33 +7,33 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_executable(weak_memory_model src/main.cpp)
 target_link_libraries(weak_memory_model PUBLIC
         parser_lib
-        executor_lib
+        execution_lib
         storage_lib
         )
 
 add_library(storage_lib STATIC)
-target_include_directories(storage_lib PUBLIC include)
+target_include_directories(storage_lib PUBLIC src/Storage)
 target_sources(storage_lib PUBLIC
-        src/Storage.cpp
-        src/TotalStoreOrderStorageManager.cpp
-        src/SequentialConsistencyStorageManager.cpp
-        src/StorageLogger.cpp
+        src/Storage/src/Storage.cpp
+        src/Storage/src/TotalStoreOrderStorageManager.cpp
+        src/Storage/src/SequentialConsistencyStorageManager.cpp
+        src/Storage/src/StorageLogger.cpp
         )
 
-add_library(executor_lib STATIC)
-target_include_directories(executor_lib PUBLIC include)
-target_sources(executor_lib PUBLIC
-        src/ThreadManager.cpp
-        src/Thread.cpp
-        src/Executor.cpp
+add_library(execution_lib STATIC)
+target_include_directories(execution_lib PUBLIC src/Execution)
+target_sources(execution_lib PUBLIC
+        src/Execution/src/ThreadManager.cpp
+        src/Execution/src/Thread.cpp
+        src/Execution/src/Executor.cpp
         )
 
 add_library(parser_lib STATIC)
-target_include_directories(parser_lib PUBLIC include)
+target_include_directories(parser_lib PUBLIC src/Program)
 target_sources(parser_lib PUBLIC
-        src/Program.cpp
-        src/Parser.cpp
-        src/Instructions.cpp
+        src/Program/src/Program.cpp
+        src/Program/src/Parser.cpp
+        src/Program/src/Instructions.cpp
         )
 
 add_executable(test test/doctest_main.cpp)

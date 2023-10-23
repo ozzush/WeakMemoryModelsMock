@@ -2,10 +2,10 @@
 
 #include <vector>
 
-#include "Program.h"
+#include "../Program/Program.h"
 #include "Thread.h"
 
-namespace wmm::executor {
+namespace wmm::execution {
 
 class ThreadManager {
     std::vector<Thread> m_threads;

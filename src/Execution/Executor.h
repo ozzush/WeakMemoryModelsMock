@@ -9,7 +9,7 @@
 
 #include "ThreadManager.h"
 
-namespace wmm::executor {
+namespace wmm::execution {
 
 class ExecutorInterface {
 protected:

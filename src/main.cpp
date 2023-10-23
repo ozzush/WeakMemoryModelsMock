@@ -1,16 +1,16 @@
-#include "Executor.h"
-#include "Parser.h"
-#include "Program.h"
-#include "SequentialConsistencyStorageManager.h"
-#include "StorageManager.h"
-#include "TotalStoreOrderStorageManager.h"
+#include "Execution/Executor.h"
+#include "Program/Parser.h"
+#include "Program/Program.h"
+#include "Storage/SequentialConsistencyStorageManager.h"
+#include "Storage/StorageManager.h"
+#include "Storage/TotalStoreOrderStorageManager.h"
 
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
 
-using namespace wmm::executor;
+using namespace wmm::execution;
 using namespace wmm::program;
 using namespace wmm::storage;
 

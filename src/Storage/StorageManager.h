@@ -6,7 +6,7 @@
 
 #include <memory>
 
-#include "Instructions.h"
+#include "../Program/Instructions.h"
 #include "Storage.h"
 #include "StorageLogger.h"
 #include "StorageMemoryAccessMode.h"
