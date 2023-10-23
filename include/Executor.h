@@ -4,15 +4,17 @@
 
 #pragma once
 
-#include "ThreadManager.h"
 #include <algorithm>
 #include <random>
-namespace wmm {
+
+#include "ThreadManager.h"
+
+namespace wmm::executor {
 
 class ExecutorInterface {
 protected:
     ThreadManager m_threadManager;
-    StorageManagerPtr m_storageManager;
+    storage::StorageManagerPtr m_storageManager;
 
     virtual bool executeThread() = 0;
     bool executeInternalMemoryUpdate() { return m_storageManager->internalUpdate(); };
@@ -20,8 +22,8 @@ protected:
 public:
     virtual bool execute() = 0;
 
-    ExecutorInterface(const std::vector<Program> &programs,
-                      const StorageManagerPtr &storageManager,
+    ExecutorInterface(const std::vector<program::Program> &programs,
+                      const storage::StorageManagerPtr &storageManager,
                       size_t threadLocalStorageSize)
         : m_storageManager(storageManager),
           m_threadManager(programs, storageManager, threadLocalStorageSize) {}
@@ -37,8 +39,8 @@ class RandomExecutor : public ExecutorInterface {
     bool executeThread() override;
 
 public:
-    RandomExecutor(const std::vector<Program> &programs,
-                   const StorageManagerPtr &storageManager,
+    RandomExecutor(const std::vector<program::Program> &programs,
+                   const storage::StorageManagerPtr &storageManager,
                    size_t threadLocalStorageSize, unsigned long seed)
         : ExecutorInterface(programs, storageManager, threadLocalStorageSize),
           m_randomGenerator(seed) {}

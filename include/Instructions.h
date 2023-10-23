@@ -4,15 +4,17 @@
 #include <memory>
 #include <vector>
 
-namespace wmm {
+namespace wmm::program {
 
 enum class MemoryAccessMode {
-    SequentialConsistency,
+    SequentialConsistency = 0,
     Release,
     Acquire,
     ReleaseAcquire,
     Relaxed
 };
+
+std::string toString(MemoryAccessMode mode);
 
 enum class InstructionAction {
     StoreConstInRegister,

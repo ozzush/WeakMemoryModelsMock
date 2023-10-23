@@ -11,8 +11,9 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <optional>
 
-namespace wmm {
+namespace wmm::program {
 
 enum class Command {
     If,

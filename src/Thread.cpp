@@ -4,7 +4,9 @@
 
 #include "Thread.h"
 
-namespace wmm {
+namespace wmm::executor {
+
+using namespace program;
 
 static int32_t applyBinaryOperation(BinaryOperation operation, int32_t lhs,
                                     int32_t rhs) {
@@ -57,7 +59,9 @@ bool Thread::evaluateInstruction() {
         case InstructionAction::Load: {
             auto cmd = *std::dynamic_pointer_cast<Load>(instruction);
             size_t address = m_localStorage.load(cmd.addressRegister);
-            int32_t value = m_storageManager->load(id, address, cmd.mode);
+            int32_t value = m_storageManager->load(
+                    id, address,
+                    static_cast<storage::MemoryAccessMode>(cmd.mode));
             m_localStorage.store(cmd.resultRegister, value);
             break;
         }
@@ -65,15 +69,20 @@ bool Thread::evaluateInstruction() {
             auto cmd = *std::dynamic_pointer_cast<Store>(instruction);
             size_t address = m_localStorage.load(cmd.addressRegister);
             int32_t value = m_localStorage.load(cmd.valueRegister);
-            m_storageManager->store(id, address, value, cmd.mode);
+            m_storageManager->store(
+                    id, address, value,
+                    static_cast<storage::MemoryAccessMode>(cmd.mode));
             break;
         }
         case InstructionAction::CompareAndSwap: {
             auto cmd = *std::dynamic_pointer_cast<CompareAndSwap>(instruction);
             size_t address = m_localStorage.load(cmd.addressRegister);
-            int32_t expectedValue = m_localStorage.load(cmd.expectedValueRegister);
+            int32_t expectedValue =
+                    m_localStorage.load(cmd.expectedValueRegister);
             int32_t newValue = m_localStorage.load(cmd.newValueRegister);
-            m_storageManager->compareAndSwap(id, address, expectedValue, newValue, cmd.mode);
+            m_storageManager->compareAndSwap(
+                    id, address, expectedValue, newValue,
+                    static_cast<storage::MemoryAccessMode>(cmd.mode));
             break;
         }
         case InstructionAction::FetchAndIncrement: {
@@ -81,12 +90,15 @@ bool Thread::evaluateInstruction() {
                     *std::dynamic_pointer_cast<FetchAndIncrement>(instruction);
             size_t address = m_localStorage.load(cmd.addressRegister);
             int32_t increment = m_localStorage.load(cmd.incrementRegister);
-            m_storageManager->fetchAndIncrement(id, address, increment, cmd.mode);
+            m_storageManager->fetchAndIncrement(
+                    id, address, increment,
+                    static_cast<storage::MemoryAccessMode>(cmd.mode));
             break;
         }
         case InstructionAction::Fence: {
             auto cmd = *std::dynamic_pointer_cast<Fence>(instruction);
-            m_storageManager->fence(id, cmd.memoryAccessMode);
+            m_storageManager->fence(id, static_cast<storage::MemoryAccessMode>(
+                                                cmd.memoryAccessMode));
             break;
         }
     }
@@ -94,4 +106,4 @@ bool Thread::evaluateInstruction() {
     return true;
 }
 
-} // namespace wmm
+} // namespace wmm::executor

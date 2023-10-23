@@ -8,7 +8,7 @@
 #include <ostream>
 #include <vector>
 
-namespace wmm {
+namespace wmm::storage {
 
 class Storage {
     std::vector<int32_t> m_storage;

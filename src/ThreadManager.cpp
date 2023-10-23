@@ -1,10 +1,10 @@
 #include "ThreadManager.h"
 #include <algorithm>
 
-namespace wmm {
+namespace wmm::executor {
 
-ThreadManager::ThreadManager(const std::vector<Program> &programs,
-                             StorageManagerPtr storageManager,
+ThreadManager::ThreadManager(const std::vector<program::Program> &programs,
+                             storage::StorageManagerPtr storageManager,
                              size_t threadLocalStorageSize)
     : m_storageManager(std::move(storageManager)) {
     m_threads.reserve(programs.size());
@@ -23,8 +23,8 @@ bool ThreadManager::allThreadsCompleted() const {
                        [](const auto &thread) { return thread.isFinished(); });
 }
 
-std::vector<Storage> ThreadManager::getThreadLocalStorages() const {
-    std::vector<Storage> storages;
+std::vector<storage::Storage> ThreadManager::getThreadLocalStorages() const {
+    std::vector<storage::Storage> storages;
     storages.reserve(m_threads.size());
     for (const auto &thread: m_threads) {
         storages.push_back(thread.getLocalStorage());

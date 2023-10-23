@@ -4,7 +4,7 @@
 
 #include "Program.h"
 
-namespace wmm {
+namespace wmm::program {
 
 std::shared_ptr<Instruction> Program::getInstruction(size_t instruction) const {
     return m_program.at(instruction);

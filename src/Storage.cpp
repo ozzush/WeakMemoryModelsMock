@@ -4,7 +4,7 @@
 
 #include "Storage.h"
 
-namespace wmm {
+namespace wmm::storage {
 
 int32_t Storage::load(size_t address) const {
     return m_storage.at(address);

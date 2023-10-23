@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.24)
 project(WeakMemoryModelMock)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(weak_memory_model src/main.cpp)
 target_link_libraries(weak_memory_model PUBLIC
@@ -16,6 +17,7 @@ target_sources(storage_lib PUBLIC
         src/Storage.cpp
         src/TotalStoreOrderStorageManager.cpp
         src/SequentialConsistencyStorageManager.cpp
+        src/Logger.cpp
         )
 
 add_library(executor_lib STATIC)

@@ -4,7 +4,7 @@
 
 #include "Parser.h"
 
-namespace wmm {
+namespace wmm::program {
 
 static std::vector<std::string> parseTokens(std::istream &stream,
                                             ssize_t expectedMax = SIZE_MAX) {

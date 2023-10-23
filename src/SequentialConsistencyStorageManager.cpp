@@ -4,7 +4,7 @@
 
 #include "SequentialConsistencyStorageManager.h"
 
-namespace wmm {
+namespace wmm::storage {
 
 int32_t SequentialConsistencyStorageManager::load(size_t threadId,
                                                   size_t address,

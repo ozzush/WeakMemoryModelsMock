@@ -6,14 +6,16 @@
 
 #include "Storage.h"
 #include "StorageManager.h"
-namespace wmm {
+
+namespace wmm::storage {
 
 class SequentialConsistencyStorageManager : public StorageManagerInterface {
     Storage m_storage;
 
 public:
-    explicit SequentialConsistencyStorageManager(size_t storageSize)
-        : m_storage(storageSize) {}
+    explicit SequentialConsistencyStorageManager(size_t storageSize,
+                                                 storage::LoggerPtr &&logger)
+        : StorageManagerInterface(std::move(logger)), m_storage(storageSize) {}
 
     int32_t load(size_t threadId, size_t address, MemoryAccessMode accessMode) override;
     void store(size_t threadId, size_t address, int32_t value, MemoryAccessMode accessMode) override;

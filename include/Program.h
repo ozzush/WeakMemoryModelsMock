@@ -4,7 +4,7 @@
 #include <memory>
 #include <unordered_map>
 
-namespace wmm {
+namespace wmm::program {
 
 using Label = size_t;
 

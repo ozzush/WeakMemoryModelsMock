@@ -12,7 +12,7 @@
 #include "Storage.h"
 #include "StorageManager.h"
 
-namespace wmm {
+namespace wmm::storage {
 
 struct StoreInstruction {
     const size_t address;
@@ -46,8 +46,8 @@ class TotalStoreOrderStorageManager : public StorageManagerInterface {
 public:
     TotalStoreOrderStorageManager(
             size_t storageSize, size_t nOfThreads,
-            InternalUpdateManagerPtr &&internalUpdateManager)
-        : m_storage(storageSize), m_threadBuffers(nOfThreads),
+            InternalUpdateManagerPtr &&internalUpdateManager, LoggerPtr &&logger = nullptr)
+        : StorageManagerInterface(std::move(logger)), m_storage(storageSize), m_threadBuffers(nOfThreads),
           m_internalUpdateManager(std::move(internalUpdateManager)) {}
 
     int32_t load(size_t threadId, size_t address,

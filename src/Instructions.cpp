@@ -1,11 +1,12 @@
-#include "Instructions.h"
-#include "Parser.h"
 #include <algorithm>
 #include <sstream>
 
-namespace wmm {
+#include "Instructions.h"
+#include "Parser.h"
 
-static std::string memoryAccessModeToString(MemoryAccessMode mode) {
+namespace wmm::program {
+
+std::string toString(MemoryAccessMode mode) {
     return std::find_if(STRING_TO_MODE.begin(), STRING_TO_MODE.end(),
                         [mode](const auto &element) {
                             return element.second == mode;
@@ -49,7 +50,7 @@ std::string Goto::toString() const {
 
 std::string Load::toString() const {
     std::stringstream output;
-    std::string modeString = memoryAccessModeToString(mode);
+    std::string modeString = program::toString(mode);
     output << "load " + modeString + " #" << addressRegister << " "
            << resultRegister;
     return output.str();
@@ -57,7 +58,7 @@ std::string Load::toString() const {
 
 std::string Store::toString() const {
     std::stringstream output;
-    std::string modeString = memoryAccessModeToString(mode);
+    std::string modeString = program::toString(mode);
     output << "store " + modeString + " #" << addressRegister << " "
            << valueRegister;
     return output.str();
@@ -65,7 +66,7 @@ std::string Store::toString() const {
 
 std::string CompareAndSwap::toString() const {
     std::stringstream output;
-    std::string modeString = memoryAccessModeToString(mode);
+    std::string modeString = program::toString(mode);
     output << "cas " + modeString + " #" << addressRegister << " "
            << expectedValueRegister << " " << newValueRegister;
     return output.str();
@@ -73,7 +74,7 @@ std::string CompareAndSwap::toString() const {
 
 std::string FetchAndIncrement::toString() const {
     std::stringstream output;
-    std::string modeString = memoryAccessModeToString(mode);
+    std::string modeString = program::toString(mode);
     output << "fei " + modeString + " #" << addressRegister << " "
            << incrementRegister;
     return output.str();
@@ -81,9 +82,9 @@ std::string FetchAndIncrement::toString() const {
 
 std::string Fence::toString() const {
     std::stringstream output;
-    std::string modeString = memoryAccessModeToString(memoryAccessMode);
+    std::string modeString = program::toString(memoryAccessMode);
     output << "fence " + modeString;
     return output.str();
 }
 
-} // namespace wmm
+} // namespace wmm::program

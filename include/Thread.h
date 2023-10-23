@@ -7,17 +7,18 @@
 #include "Program.h"
 #include "Storage.h"
 #include "StorageManager.h"
-namespace wmm {
+
+namespace wmm::executor {
 
 class Thread {
-    const Program m_program;
-    Storage m_localStorage;
-    StorageManagerPtr m_storageManager;
+    const program::Program m_program;
+    storage::Storage m_localStorage;
+    storage::StorageManagerPtr m_storageManager;
     size_t m_currentInstruction = 0;
 public:
     const size_t id;
 
-    Thread(Program program, StorageManagerPtr storageManager, size_t threadId,
+    Thread(program::Program program, storage::StorageManagerPtr storageManager, size_t threadId,
            size_t localStorageSize = 100)
         : m_program(std::move(program)), m_localStorage(localStorageSize),
           m_storageManager(std::move(storageManager)), id(threadId) {}
@@ -26,7 +27,7 @@ public:
 
     bool isFinished() const { return m_currentInstruction == m_program.size(); }
 
-    Storage getLocalStorage() const { return m_localStorage; };
+    storage::Storage getLocalStorage() const { return m_localStorage; };
 };
 
 } // namespace wmm

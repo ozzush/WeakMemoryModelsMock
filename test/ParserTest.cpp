@@ -1,7 +1,7 @@
 #include "Parser.h"
 #include "doctest.h"
 
-using namespace wmm;
+using namespace wmm::program;
 
 TEST_SUITE("Parser") {
     TEST_CASE("Label") {

@@ -4,12 +4,15 @@
 #include "SequentialConsistencyStorageManager.h"
 #include "StorageManager.h"
 #include "TotalStoreOrderStorageManager.h"
+
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
 
-using namespace wmm;
+using namespace wmm::executor;
+using namespace wmm::program;
+using namespace wmm::storage;
 
 int main(int argc, char *argv[]) {
     std::vector<Program> programs;

@@ -7,7 +7,7 @@
 #include "TotalStoreOrderStorageManager.h"
 #include "doctest.h"
 
-using namespace wmm;
+using namespace wmm::storage;
 
 TEST_SUITE("Total Store Order") {
     TEST_CASE("Load and Store") {

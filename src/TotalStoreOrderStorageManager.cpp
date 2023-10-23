@@ -5,7 +5,7 @@
 #include "TotalStoreOrderStorageManager.h"
 #include <ostream>
 
-namespace wmm {
+namespace wmm::storage {
 
 int32_t TotalStoreOrderStorageManager::load(size_t threadId, size_t address,
                                             MemoryAccessMode accessMode) {
