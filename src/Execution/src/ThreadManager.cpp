@@ -1,4 +1,4 @@
-#include "../ThreadManager.h"
+#include "ThreadManager.h"
 #include <algorithm>
 
 namespace wmm::execution {

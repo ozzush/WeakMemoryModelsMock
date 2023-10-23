@@ -2,7 +2,7 @@
 // Created by veronika on 21.10.23.
 //
 
-#include "../SequentialConsistencyStorageManager.h"
+#include "SequentialConsistencyStorageManager.h"
 
 namespace wmm::storage {
 

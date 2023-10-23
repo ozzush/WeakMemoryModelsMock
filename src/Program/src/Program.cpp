@@ -2,7 +2,7 @@
 // Created by veronika on 20.10.23.
 //
 
-#include "../Program.h"
+#include "Program.h"
 
 namespace wmm::program {
 

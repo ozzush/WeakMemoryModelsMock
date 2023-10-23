@@ -1,4 +1,4 @@
-#include "../src/Program/Parser.h"
+#include "Parser.h"
 #include "doctest.h"
 
 using namespace wmm::program;

@@ -1,8 +1,8 @@
 #include <algorithm>
 #include <sstream>
 
-#include "../Instructions.h"
-#include "../Parser.h"
+#include "Instructions.h"
+#include "Parser.h"
 
 namespace wmm::program {
 

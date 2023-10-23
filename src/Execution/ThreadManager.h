@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "../Program/Program.h"
+#include "Program.h"
 #include "Thread.h"
 
 namespace wmm::execution {

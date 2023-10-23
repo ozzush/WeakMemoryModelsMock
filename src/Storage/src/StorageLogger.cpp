@@ -4,8 +4,8 @@
 
 #include <format>
 
-#include "../StorageLogger.h"
-#include "../StorageManager.h"
+#include "StorageLogger.h"
+#include "StorageManager.h"
 
 namespace wmm::storage {
 void StorageLoggerImpl::storage(const storage::StorageManagerInterface &storage) {

@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "../Program/Program.h"
-#include "../Storage/Storage.h"
-#include "../Storage/StorageManager.h"
+#include "Program.h"
+#include "Storage.h"
+#include "StorageManager.h"
 
 namespace wmm::execution {
 

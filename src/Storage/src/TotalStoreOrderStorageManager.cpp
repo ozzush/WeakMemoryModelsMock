@@ -6,7 +6,7 @@
 #include <ostream>
 #include <sstream>
 
-#include "../TotalStoreOrderStorageManager.h"
+#include "TotalStoreOrderStorageManager.h"
 
 namespace wmm::storage {
 

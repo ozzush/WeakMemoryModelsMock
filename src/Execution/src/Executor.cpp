@@ -4,7 +4,7 @@
 
 #include <sstream>
 
-#include "../Executor.h"
+#include "Executor.h"
 
 namespace wmm::execution {
 

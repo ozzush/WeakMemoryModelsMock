@@ -2,7 +2,7 @@
 // Created by veronika on 21.10.23.
 //
 
-#include "../Thread.h"
+#include "Thread.h"
 
 namespace wmm::execution {
 
