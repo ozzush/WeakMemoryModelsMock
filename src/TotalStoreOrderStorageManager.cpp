@@ -30,8 +30,7 @@ void TotalStoreOrderStorageManager::compareAndSwap(
 }
 
 void TotalStoreOrderStorageManager::flushBuffer(size_t threadId) {
-    while (propagate(threadId))
-        ;
+    while (propagate(threadId)) {}
 }
 
 void TotalStoreOrderStorageManager::fetchAndIncrement(
@@ -129,4 +128,4 @@ std::optional<size_t> RandomTSOInternalUpdateManager::getThreadId() {
     return {};
 }
 
-} // namespace wmm
+} // namespace wmm::storage
