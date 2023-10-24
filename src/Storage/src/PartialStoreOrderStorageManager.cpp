@@ -23,7 +23,6 @@ void PartialStoreOrderStorageManager::store(size_t threadId, size_t address,
                                             MemoryAccessMode accessMode) {
     m_storageLogger->store(threadId, address, value, accessMode);
     m_threadBuffers.at(threadId).push(address, value);
-    logBuffer(threadId, address);
 }
 
 void PartialStoreOrderStorageManager::compareAndSwap(
@@ -35,7 +34,6 @@ void PartialStoreOrderStorageManager::compareAndSwap(
                                     newValue, accessMode);
     if (value == expectedValue) {
         m_storage.store(address, newValue);
-        logStorage();
     }
 }
 
@@ -52,7 +50,6 @@ void PartialStoreOrderStorageManager::fetchAndIncrement(
                                        accessMode);
     auto value = m_storage.load(address);
     m_storage.store(address, value + increment);
-    logStorage();
 }
 
 void PartialStoreOrderStorageManager::fence(size_t threadId,
@@ -68,7 +65,7 @@ void PartialStoreOrderStorageManager::writeStorage(
     outputStream << "Shared storage: " << m_storage.str() << '\n';
     outputStream << "Thread buffers:\n";
     for (size_t i = 0; i < m_threadBuffers.size(); ++i) {
-        outputStream << std::format("t{}: {}\n", i, m_threadBuffers[i].str());
+        outputStream << std::format("b{}: {}\n", i, m_threadBuffers[i].str());
     }
 }
 
@@ -79,7 +76,6 @@ bool PartialStoreOrderStorageManager::propagate(size_t threadId,
         m_storage.store(address, newValue.value());
         m_storageLogger->info(std::format("ACTION: b{}#{}: propagate ({})",
                                           threadId, address, newValue.value()));
-        logBuffer(threadId, address);
         return true;
     }
     return false;
@@ -93,17 +89,6 @@ bool PartialStoreOrderStorageManager::internalUpdate() {
         if (propagate(threadId, address)) { return true; }
     }
     return false;
-}
-
-void PartialStoreOrderStorageManager::logBuffer(size_t threadId,
-                                                size_t address) const {
-    m_storageLogger->info(
-            std::format("STATE:  b{}#{}: [{}]", threadId, address,
-                        m_threadBuffers.at(threadId).getBuffer(address).str()));
-}
-
-void PartialStoreOrderStorageManager::logStorage() const {
-    m_storageLogger->info(std::format("STATE:  storage: {}", m_storage.str()));
 }
 
 void ThreadBuffer::push(size_t address, int32_t value) {
@@ -130,6 +115,7 @@ std::string ThreadBuffer::str() const {
     }
     return result;
 }
+
 const AddressBuffer &ThreadBuffer::getBuffer(size_t address) const {
     return m_buffer.at(address);
 }

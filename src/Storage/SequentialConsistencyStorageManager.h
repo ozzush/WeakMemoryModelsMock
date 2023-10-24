@@ -12,8 +12,6 @@ namespace wmm::storage::SC {
 class SequentialConsistencyStorageManager : public StorageManagerInterface {
     Storage m_storage;
 
-    void logStorage();
-
 public:
     explicit SequentialConsistencyStorageManager(
             size_t storageSize,

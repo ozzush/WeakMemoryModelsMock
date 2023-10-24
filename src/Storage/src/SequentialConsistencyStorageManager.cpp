@@ -9,14 +9,6 @@
 
 namespace wmm::storage::SC {
 
-void SequentialConsistencyStorageManager::logStorage() {
-    std::stringstream storageStream;
-    storageStream << m_storage.str();
-    m_storageLogger->info(
-            std::format("STATE:  storage: {}", storageStream.str()));
-}
-
-
 int32_t SequentialConsistencyStorageManager::load(size_t threadId,
                                                   size_t address,
                                                   MemoryAccessMode accessMode) {
@@ -30,7 +22,6 @@ void SequentialConsistencyStorageManager::store(size_t threadId, size_t address,
                                                 MemoryAccessMode accessMode) {
     m_storageLogger->store(threadId, address, value, accessMode);
     m_storage.store(address, value);
-    logStorage();
 }
 
 void SequentialConsistencyStorageManager::compareAndSwap(
@@ -41,7 +32,6 @@ void SequentialConsistencyStorageManager::compareAndSwap(
                                     newValue, accessMode);
     if (value == expectedValue) {
         m_storage.store(address, newValue);
-        logStorage();
     }
 }
 
@@ -52,7 +42,6 @@ void SequentialConsistencyStorageManager::fetchAndIncrement(
                                        accessMode);
     auto value = m_storage.load(address);
     m_storage.store(address, value + increment);
-    logStorage();
 }
 
 void SequentialConsistencyStorageManager::fence(size_t threadId,

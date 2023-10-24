@@ -33,7 +33,7 @@ public:
     void push(size_t address, int32_t value);
     std::optional<int32_t> pop(size_t address);
     std::optional<int32_t> find(size_t address);
-    const AddressBuffer &getBuffer(size_t address) const;
+    [[nodiscard]] const AddressBuffer &getBuffer(size_t address) const;
     [[nodiscard]] std::string str(size_t address) const;
     [[nodiscard]] std::string str() const;
 
@@ -53,9 +53,6 @@ class PartialStoreOrderStorageManager : public StorageManagerInterface {
 
     void flushBuffer(size_t threadId, size_t address);
     bool propagate(size_t threadId, size_t address);
-
-    void logBuffer(size_t threadId, size_t address) const;
-    void logStorage() const;
 
 public:
     PartialStoreOrderStorageManager(

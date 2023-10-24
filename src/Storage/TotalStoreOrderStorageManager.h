@@ -17,6 +17,8 @@ namespace wmm::storage::TSO {
 struct StoreInstruction {
     const size_t address;
     const int32_t value;
+
+    [[nodiscard]] std::string str() const;
 };
 
 class Buffer {
@@ -26,7 +28,8 @@ public:
     void push(StoreInstruction instruction);
     std::optional<StoreInstruction> pop();
     std::optional<int32_t> find(size_t address);
-    friend std::ostream &operator<<(std::ostream &os, const Buffer &buffer);
+    [[nodiscard]] bool empty() const;
+    [[nodiscard]] std::string str() const;
 };
 
 class InternalUpdateManager;
@@ -42,9 +45,6 @@ class TotalStoreOrderStorageManager : public StorageManagerInterface {
 
     void flushBuffer(size_t threadId);
     bool propagate(size_t threadId);
-
-    void logBuffer(size_t threadId);
-    void logStorage();
 
 public:
     TotalStoreOrderStorageManager(
@@ -64,6 +64,9 @@ public:
     void fetchAndIncrement(size_t threadId, size_t address, int32_t increment,
                            MemoryAccessMode accessMode) override;
     void fence(size_t threadId, MemoryAccessMode accessMode) override;
+
+    [[nodiscard]] std::vector<size_t> getNonEmptyBuffers() const;
+    [[nodiscard]] const Buffer &getBuffer(size_t threadId) const;
 
     [[nodiscard]] Storage getStorage() const override { return m_storage; }
     void writeStorage(std::ostream &outputStream) const override;
@@ -106,5 +109,16 @@ public:
     explicit RandomInternalUpdateManager(unsigned long seed)
         : m_randomGenerator(seed), m_nextThreadIdIndex(0) {}
 };
+
+class InteractiveInternalUpdateManager : public InternalUpdateManager {
+    std::vector<size_t> m_threadIds;
+    std::vector<std::reference_wrapper<const Buffer>> m_buffers;
+
+    void reset(const TotalStoreOrderStorageManager &storageManager) override;
+    std::optional<size_t> getThreadId() override;
+
+public:
+};
+
 
 } // namespace wmm::storage::TSO

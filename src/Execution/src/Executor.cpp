@@ -56,7 +56,7 @@ void InteractiveExecutor::writeState(std::ostream &outputStream) const {
 }
 
 bool InteractiveExecutor::executeThread() {
-    std::cout << "Choose thread to execute: " << '\n';
+    std::cout << "Choose thread to execute:\n";
     bool allThreadsAreFinished = true;
     for (size_t threadId = 0; threadId < m_threadManager.size(); ++threadId) {
         m_threadManager.evaluateThreadLocalInstructions(threadId);
