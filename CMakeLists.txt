@@ -45,5 +45,8 @@ target_sources(program_lib PUBLIC
 add_executable(test test/doctest_main.cpp)
 target_sources(test PUBLIC
         test/ParserTest.cpp
-        test/StorageManagerTest.cpp)
+        test/SequentialConsistencyTest.cpp
+        test/TotalStoreOrderTest.cpp
+        test/PartialStoreOrderTest.cpp
+        )
 target_link_libraries(test PUBLIC program_lib storage_lib)

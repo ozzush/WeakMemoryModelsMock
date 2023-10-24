@@ -21,7 +21,7 @@ TEST_SUITE("Parser") {
         SUBCASE("FetchAndIncrement") { command = "fei REL_ACQ #1 2"; }
         SUBCASE("Fence") { command = "fence RLX"; }
         auto [label, instruction] = Parser::parseLine(command);
-        CHECK_EQ(command, instruction->toString());
+        CHECK_EQ(command, instruction->str());
     }
 
     TEST_CASE("Addition") {

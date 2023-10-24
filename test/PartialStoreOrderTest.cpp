@@ -2,20 +2,20 @@
 // Created by veronika on 22.10.23.
 //
 
-#include "SequentialConsistencyStorageManager.h"
-#include "TotalStoreOrderStorageManager.h"
+#include "PartialStoreOrderStorageManager.h"
 #include "doctest.h"
 
 using namespace wmm::storage;
 
-TEST_SUITE("Total Store Order") {
-    using TSO::InternalUpdateManagerPtr;
-    using TSO::SequentialInternalUpdateManager;
-    using TSO::TotalStoreOrderStorageManager;
+TEST_SUITE("Partial Store Order") {
+    // TODO: add test that differentiates TSO and PSO
+    using PSO::InternalUpdateManagerPtr;
+    using PSO::SequentialInternalUpdateManager;
+    using PSO::PartialStoreOrderStorageManager;
 
     TEST_CASE("Load and Store") {
         InternalUpdateManagerPtr internalUpdateManager(new SequentialInternalUpdateManager());
-        TotalStoreOrderStorageManager storageManager(10, 2, std::move(internalUpdateManager));
+        PartialStoreOrderStorageManager storageManager(10, 2, std::move(internalUpdateManager));
 
         SUBCASE("Load from uninitialized storage should return 0") {
             int32_t result = storageManager.load(0, 0, MemoryAccessMode::Relaxed);
@@ -39,7 +39,7 @@ TEST_SUITE("Total Store Order") {
 
     TEST_CASE("CompareAndSwap") {
         InternalUpdateManagerPtr internalUpdateManager(new SequentialInternalUpdateManager());
-        TotalStoreOrderStorageManager storageManager(10, 2, std::move(internalUpdateManager));
+        PartialStoreOrderStorageManager storageManager(10, 2, std::move(internalUpdateManager));
 
         storageManager.store(0, 0, 42, MemoryAccessMode::Relaxed);
         SUBCASE("CompareAndSwap should succeed with the expected value") {
@@ -56,7 +56,7 @@ TEST_SUITE("Total Store Order") {
 
     TEST_CASE("FetchAndIncrement") {
         InternalUpdateManagerPtr internalUpdateManager(new SequentialInternalUpdateManager());
-        TotalStoreOrderStorageManager storageManager(10, 2, std::move(internalUpdateManager));
+        PartialStoreOrderStorageManager storageManager(10, 2, std::move(internalUpdateManager));
 
         SUBCASE("FetchAndIncrement doesn't ignore buffer") {
             storageManager.store(0, 0, 10, MemoryAccessMode::Relaxed);
@@ -73,7 +73,7 @@ TEST_SUITE("Total Store Order") {
 
     TEST_CASE("Fence") {
         InternalUpdateManagerPtr internalUpdateManager(new SequentialInternalUpdateManager());
-        TotalStoreOrderStorageManager storageManager(10, 2, std::move(internalUpdateManager));
+        PartialStoreOrderStorageManager storageManager(10, 2, std::move(internalUpdateManager));
 
         SUBCASE("Fence flushes buffer") {
             storageManager.store(0, 0, 10, MemoryAccessMode::Relaxed);
@@ -90,50 +90,6 @@ TEST_SUITE("Total Store Order") {
             storageManager.fence(1, MemoryAccessMode::Relaxed);
             result = storageManager.load(1, 0, MemoryAccessMode::Relaxed);
             CHECK_EQ(result, 0);
-        }
-    }
-}
-
-TEST_SUITE("Sequential Consistency") {
-    using SC::SequentialConsistencyStorageManager;
-    TEST_CASE("Load and Store") {
-        SequentialConsistencyStorageManager storageManager(10);
-
-        SUBCASE("Load from uninitialized storage should return 0") {
-            int32_t result = storageManager.load(0, 0, MemoryAccessMode::Relaxed);
-            CHECK_EQ(result, 0);
-        }
-        SUBCASE("Stored value is immediately available to other threads") {
-            storageManager.store(0, 0, 42, MemoryAccessMode::Relaxed);
-            int32_t result = storageManager.load(1, 0, MemoryAccessMode::Relaxed);
-            CHECK_EQ(result, 42);
-        }
-    }
-
-    TEST_CASE("CompareAndSwap") {
-        SequentialConsistencyStorageManager storageManager(10);
-
-        storageManager.store(0, 0, 42, MemoryAccessMode::Relaxed);
-        SUBCASE("CompareAndSwap should succeed with the expected value") {
-            storageManager.compareAndSwap(0, 0, 42, 43, MemoryAccessMode::Relaxed);
-            int32_t result = storageManager.load(1, 0, MemoryAccessMode::Relaxed);
-            CHECK_EQ(result, 43);
-        }
-        SUBCASE("CompareAndSwap should fail with the wrong expected value") {
-            storageManager.compareAndSwap(0, 0, 0, 43, MemoryAccessMode::Relaxed);
-            int32_t result = storageManager.load(1, 0, MemoryAccessMode::Relaxed);
-            CHECK_EQ(result, 42);
-        }
-    }
-
-    TEST_CASE("FetchAndIncrement") {
-        SequentialConsistencyStorageManager storageManager(10);
-
-        SUBCASE("FetchAndIncrement test") {
-            storageManager.store(0, 0, 10, MemoryAccessMode::Relaxed);
-            storageManager.fetchAndIncrement(0, 0, 42, MemoryAccessMode::Relaxed);
-            int32_t result = storageManager.load(1, 0, MemoryAccessMode::Relaxed);
-            CHECK_EQ(result, 52);
         }
     }
 }
