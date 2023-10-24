@@ -3,6 +3,7 @@
 //
 
 #include <format>
+#include <iostream>
 #include <ostream>
 
 #include "PartialStoreOrderStorageManager.h"
@@ -32,9 +33,7 @@ void PartialStoreOrderStorageManager::compareAndSwap(
     auto value = m_storage.load(address);
     m_storageLogger->compareAndSwap(threadId, address, expectedValue, value,
                                     newValue, accessMode);
-    if (value == expectedValue) {
-        m_storage.store(address, newValue);
-    }
+    if (value == expectedValue) { m_storage.store(address, newValue); }
 }
 
 void PartialStoreOrderStorageManager::flushBuffer(size_t threadId,
@@ -192,13 +191,45 @@ void InteractiveInternalUpdateManager::reset(
         const PartialStoreOrderStorageManager &storageManager) {
     m_buffers.clear();
     m_threadIdAndAddressPairs.clear();
-    for (size_t threadId = 0; threadId < storageManager.m_threadBuffers.size(); ++threadId) {
-        for (size_t address = 0; address < storageManager.m_storage.size(); ++address) {
-            const auto &buffer = storageManager.m_threadBuffers[threadId].getBuffer(address);
+    for (size_t threadId = 0; threadId < storageManager.m_threadBuffers.size();
+         ++threadId) {
+        for (size_t address = 0; address < storageManager.m_storage.size();
+             ++address) {
+            const auto &buffer =
+                    storageManager.m_threadBuffers[threadId].getBuffer(address);
             if (!buffer.empty()) {
                 m_threadIdAndAddressPairs.emplace_back(threadId, address);
                 m_buffers.emplace_back(buffer);
             }
+        }
+    }
+}
+
+std::optional<std::pair<size_t, size_t>>
+InteractiveInternalUpdateManager::getThreadIdAndAddress() {
+    if (m_threadIdAndAddressPairs.empty()) {
+        std::cout << "All buffers are empty.\n";
+        return {};
+    }
+    std::cout << "Choose buffer to propagate:\n";
+    for (size_t i = 0; i < m_threadIdAndAddressPairs.size(); ++i) {
+        auto pair = m_threadIdAndAddressPairs[i];
+        std::cout << std::format("{}#{}: {}\n", pair.first, pair.second,
+                                 m_buffers[i].get().str());
+    }
+    while (true) {
+        size_t threadId;
+        size_t address;
+        std::cout << "Enter thread id and address (two integers separated by "
+                     "space) > ";
+        std::cin >> threadId >> address;
+        if (std::cin.eof() || std::cin.fail()) { return {}; }
+        if (std::count(m_threadIdAndAddressPairs.begin(),
+                       m_threadIdAndAddressPairs.end(),
+                       std::pair{threadId, address}) == 0) {
+            std::cout << "This buffer cannot be propagated.\n";
+        } else {
+            return {{threadId, address}};
         }
     }
 }

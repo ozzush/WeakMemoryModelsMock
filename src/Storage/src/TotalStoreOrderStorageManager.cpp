@@ -159,7 +159,11 @@ std::optional<size_t> InteractiveInternalUpdateManager::getThreadId() {
         std::cout << "Enter buffer id > ";
         std::cin >> threadId;
         if (std::cin.eof() || std::cin.fail()) { return {}; }
-        return threadId;
+        if (std::count(m_threadIds.begin(), m_threadIds.end(), threadId) == 0) {
+            std::cout << "This buffer cannot be propagated.\n";
+        } else {
+            return threadId;
+        }
     }
 }
 

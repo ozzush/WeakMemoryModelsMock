@@ -6,11 +6,8 @@
 
 #include "Executor.h"
 #include "Parser.h"
-#include "PartialStoreOrderStorageManager.h"
 #include "Program.h"
 #include "SequentialConsistencyStorageManager.h"
-#include "StorageManager.h"
-#include "TotalStoreOrderStorageManager.h"
 
 using namespace wmm::execution;
 using namespace wmm::program;
