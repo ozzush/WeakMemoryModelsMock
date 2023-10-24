@@ -35,6 +35,7 @@ public:
 class InternalUpdateManager;
 class SequentialInternalUpdateManager;
 class RandomInternalUpdateManager;
+class InteractiveInternalUpdateManager;
 
 using InternalUpdateManagerPtr = std::unique_ptr<InternalUpdateManager>;
 
@@ -65,15 +66,13 @@ public:
                            MemoryAccessMode accessMode) override;
     void fence(size_t threadId, MemoryAccessMode accessMode) override;
 
-    [[nodiscard]] std::vector<size_t> getNonEmptyBuffers() const;
-    [[nodiscard]] const Buffer &getBuffer(size_t threadId) const;
-
     [[nodiscard]] Storage getStorage() const override { return m_storage; }
     void writeStorage(std::ostream &outputStream) const override;
     bool internalUpdate() override;
 
     friend class SequentialInternalUpdateManager;
     friend class RandomInternalUpdateManager;
+    friend class InteractiveInternalUpdateManager;
 };
 
 class InternalUpdateManager {

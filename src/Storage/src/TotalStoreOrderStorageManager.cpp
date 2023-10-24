@@ -34,9 +34,7 @@ void TotalStoreOrderStorageManager::compareAndSwap(
     auto value = m_storage.load(address);
     m_storageLogger->compareAndSwap(threadId, address, expectedValue, value,
                                     newValue, accessMode);
-    if (value == expectedValue) {
-        m_storage.store(address, newValue);
-    }
+    if (value == expectedValue) { m_storage.store(address, newValue); }
 }
 
 void TotalStoreOrderStorageManager::flushBuffer(size_t threadId) {
@@ -85,18 +83,6 @@ bool TotalStoreOrderStorageManager::internalUpdate() {
         if (propagate(threadId.value())) { return true; }
     }
     return false;
-}
-
-std::vector<size_t> TotalStoreOrderStorageManager::getNonEmptyBuffers() const {
-    std::vector<size_t> result;
-    for (size_t i = 0; i < m_threadBuffers.size(); ++i) {
-        if (!m_threadBuffers[i].empty()) { result.push_back(i); }
-    }
-    return result;
-}
-
-const Buffer &TotalStoreOrderStorageManager::getBuffer(size_t threadId) const {
-    return m_threadBuffers.at(threadId);
 }
 
 std::optional<StoreInstruction> Buffer::pop() {
@@ -179,11 +165,13 @@ std::optional<size_t> InteractiveInternalUpdateManager::getThreadId() {
 
 void InteractiveInternalUpdateManager::reset(
         const TotalStoreOrderStorageManager &storageManager) {
-    m_threadIds = storageManager.getNonEmptyBuffers();
+    m_threadIds.clear();
     m_buffers.clear();
-    m_buffers.reserve(m_threadIds.size());
-    for (auto threadId: m_threadIds) {
-        m_buffers.emplace_back(storageManager.getBuffer(threadId));
+    for (size_t i = 0; i < storageManager.m_threadBuffers.size(); ++i) {
+        if (!storageManager.m_threadBuffers[i].empty()) {
+            m_threadIds.push_back(i);
+            m_buffers.emplace_back(storageManager.m_threadBuffers.at(i));
+        }
     }
 }
 
