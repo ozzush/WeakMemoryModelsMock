@@ -79,6 +79,7 @@ public:
 
     friend class SequentialInternalUpdateManager;
     friend class RandomInternalUpdateManager;
+    friend class InteractiveInternalUpdateManager;
 };
 
 class InternalUpdateManager {
@@ -118,6 +119,17 @@ class RandomInternalUpdateManager : public InternalUpdateManager {
 public:
     explicit RandomInternalUpdateManager(unsigned long seed)
         : m_randomGenerator(seed), m_nextThreadIdAndAddressIndex(0) {}
+};
+
+class InteractiveInternalUpdateManager : public InternalUpdateManager {
+    std::vector<std::pair<size_t, size_t>> m_threadIdAndAddressPairs;
+    std::vector<std::reference_wrapper<const AddressBuffer>> m_buffers;
+
+    void reset(const PartialStoreOrderStorageManager &storageManager) override;
+    std::optional<std::pair<size_t, size_t>> getThreadIdAndAddress() override;
+
+public:
+    InteractiveInternalUpdateManager() = default;
 };
 
 } // namespace wmm::storage::PSO

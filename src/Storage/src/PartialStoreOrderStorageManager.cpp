@@ -187,4 +187,20 @@ std::string AddressBuffer::str() const {
     }
     return result;
 }
+
+void InteractiveInternalUpdateManager::reset(
+        const PartialStoreOrderStorageManager &storageManager) {
+    m_buffers.clear();
+    m_threadIdAndAddressPairs.clear();
+    for (size_t threadId = 0; threadId < storageManager.m_threadBuffers.size(); ++threadId) {
+        for (size_t address = 0; address < storageManager.m_storage.size(); ++address) {
+            const auto &buffer = storageManager.m_threadBuffers[threadId].getBuffer(address);
+            if (!buffer.empty()) {
+                m_threadIdAndAddressPairs.emplace_back(threadId, address);
+                m_buffers.emplace_back(buffer);
+            }
+        }
+    }
+}
+
 } // namespace wmm::storage::PSO
