@@ -14,19 +14,19 @@ void StorageLoggerImpl::storage(
 }
 
 void StorageLoggerImpl::error(const std::string &log) {
-    if (m_logLevel <= LogLevel::ERROR) {
+    if (m_logLevel >= LogLevel::ERROR) {
         m_outputStream.get() << "ERROR: " << log << std::endl;
     }
 }
 
 void StorageLoggerImpl::warning(const std::string &log) {
-    if (m_logLevel <= LogLevel::WARNING) {
+    if (m_logLevel >= LogLevel::WARNING) {
         m_outputStream.get() << "WARN: " << log << std::endl;
     }
 }
 
 void StorageLoggerImpl::info(const std::string &log) {
-    if (m_logLevel <= LogLevel::INFO) {
+    if (m_logLevel >= LogLevel::INFO) {
         m_outputStream.get() << log << std::endl;
     }
 }

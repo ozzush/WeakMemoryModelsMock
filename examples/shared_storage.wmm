@@ -1,0 +1,9 @@
+MAKETHREAD
+1 = 1
+2 = 5
+cas RLX #1 0 2
+
+MAKETHREAD
+1 = 1
+2 = 6
+cas RLX #1 0 2

@@ -31,7 +31,11 @@ public:
 
 
     virtual void writeState(std::ostream &outputStream) const = 0;
+
+    virtual ~ExecutorInterface() = default;
 };
+
+using ExecutorPtr = std::unique_ptr<ExecutorInterface>;
 
 class RandomExecutor : public ExecutorInterface {
     std::mt19937 m_randomGenerator;

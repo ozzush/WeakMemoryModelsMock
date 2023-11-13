@@ -62,8 +62,10 @@ class Parser {
 
 public:
     static std::tuple<std::optional<Label>, InstructionPtr> parseLine(const std::string &line);
-    static Program parseFromStream(std::istream &stream);
-    static Program parseFromString(const std::string &input);
+    static std::vector<Program> parseFromStream(std::istream &stream);
+    static std::vector<Program> parseFromString(const std::string &input);
+
+    static constexpr std::string THREAD_SEPARATOR = "MAKETHREAD";
 };
 
 } // namespace wmm

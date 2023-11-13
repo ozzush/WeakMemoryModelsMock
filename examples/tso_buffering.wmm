@@ -1,0 +1,18 @@
+MAKETHREAD
+1 = 1
+2 = 1
+store RLX #1 2
+1 = 2
+store RLX #1 2
+1 = 3
+store RLX #1 2
+
+MAKETHREAD
+1 = 1
+2 = 2
+store RLX #1 2
+1 = 2
+store RLX #1 2
+1 = 3
+store RLX #1 2
+

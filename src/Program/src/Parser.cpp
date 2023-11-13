@@ -176,13 +176,25 @@ Parser::parseLine(const std::string &line) {
     return {label, instruction};
 }
 
-Program Parser::parseFromStream(std::istream &stream) {
+std::vector<Program> Parser::parseFromStream(std::istream &stream) {
     std::string line;
     size_t linesRead = 0;
     std::vector<InstructionPtr> program;
     std::unordered_map<Label, size_t> labelMapping;
+    std::vector<Program> threadPrograms;
+    bool makethread = false;
     while (std::getline(stream, line)) {
         ++linesRead;
+        if (line == THREAD_SEPARATOR) {
+            if (makethread) {
+                threadPrograms.emplace_back(std::move(program),
+                                            std::move(labelMapping));
+                program.clear();
+                labelMapping.clear();
+            }
+            makethread = true;
+            continue;
+        }
         try {
             auto [label, instruction] = parseLine(line);
             if (label) {
@@ -193,19 +205,18 @@ Program Parser::parseFromStream(std::istream &stream) {
                 }
                 labelMapping[label.value()] = program.size();
             }
-            if (instruction) {
-                program.push_back(instruction);
-            }
+            if (instruction) { program.push_back(instruction); }
         } catch (const std::exception &e) {
             throw ParsingError(linesRead, e.what());
         }
     }
-    return {std::move(program), std::move(labelMapping)};
+    threadPrograms.emplace_back(std::move(program), std::move(labelMapping));
+    return std::move(threadPrograms);
 }
 
-Program Parser::parseFromString(const std::string &input) {
+std::vector<Program> Parser::parseFromString(const std::string &input) {
     std::stringstream stream(input);
     return parseFromStream(stream);
 }
 
-} // namespace wmm
+} // namespace wmm::program

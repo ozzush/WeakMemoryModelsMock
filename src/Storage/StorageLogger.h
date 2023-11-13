@@ -13,7 +13,11 @@ namespace wmm::storage {
 
 class StorageManagerInterface;
 
-enum class LogLevel : int { INFO = 0, WARNING, ERROR };
+enum class LogLevel : int {
+    ERROR = 0,
+    WARNING,
+    INFO,
+};
 
 static inline bool operator<=(LogLevel lhs, LogLevel rhs) {
     return static_cast<int>(lhs) <= static_cast<int>(rhs);

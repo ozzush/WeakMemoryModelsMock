@@ -1,3 +1,9 @@
+MAKETHREAD
+1 = 1
+2 = 3
+0 = 1 - 2
+
+MAKETHREAD
 1 = 5
 2 = 1
 123: 1 = 1 - 2
