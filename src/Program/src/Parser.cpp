@@ -182,17 +182,15 @@ std::vector<Program> Parser::parseFromStream(std::istream &stream) {
     std::vector<InstructionPtr> program;
     std::unordered_map<Label, size_t> labelMapping;
     std::vector<Program> threadPrograms;
-    bool makethread = false;
     while (std::getline(stream, line)) {
         ++linesRead;
         if (line == THREAD_SEPARATOR) {
-            if (makethread) {
+            if (!program.empty()) {
                 threadPrograms.emplace_back(std::move(program),
                                             std::move(labelMapping));
                 program.clear();
                 labelMapping.clear();
             }
-            makethread = true;
             continue;
         }
         try {
