@@ -5,6 +5,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <ostream>
 
 #include "StorageMemoryAccessMode.h"
@@ -35,11 +36,13 @@ public:
 
     void store(size_t threadId, size_t address, int32_t value,
                MemoryAccessMode accessMode);
+
     void compareAndSwap(size_t threadId, size_t address, int32_t expectedValue,
-                        int32_t realValue, int32_t newValue,
+                        std::optional<int32_t> realValue, int32_t newValue,
                         MemoryAccessMode accessMode);
+
     void fetchAndIncrement(size_t threadId, size_t address, int32_t increment,
-                           MemoryAccessMode accessMode);
+                           MemoryAccessMode accessMode, bool failure = false);
 
     void fence(size_t threadId, MemoryAccessMode accessMode);
 

@@ -44,20 +44,26 @@ void StorageLogger::store(size_t threadId, size_t address, int32_t value,
 }
 
 void StorageLogger::compareAndSwap(size_t threadId, size_t address,
-                                   int32_t expectedValue, int32_t realValue,
+                                   int32_t expectedValue,
+                                   std::optional<int32_t> realValue,
                                    int32_t newValue,
                                    MemoryAccessMode accessMode) {
-    info(std::format("ACTION: t{}#{}: {} if ({})=={} store {}", threadId,
-                     address, toString(accessMode), realValue, expectedValue,
+    std::string action = (realValue) ? "ACTION" : "FAILED";
+    std::string value = (realValue) ? std::to_string(realValue.value()) : "?";
+    info(std::format("{}: t{}#{}: {} if ({})=={} store {}", action, threadId,
+                     address, toString(accessMode), value, expectedValue,
                      newValue));
 }
 
 void StorageLogger::fetchAndIncrement(size_t threadId, size_t address,
                                       int32_t increment,
-                                      MemoryAccessMode accessMode) {
-    info(std::format("ACTION: t{}#{}: {} +{}", threadId, address,
+                                      MemoryAccessMode accessMode,
+                                      bool failure) {
+    std::string action = (failure) ? "ACTION" : "FAILED";
+    info(std::format("{}: t{}#{}: {} +{}", action, threadId, address,
                      toString(accessMode), increment));
 }
+
 void StorageLogger::fence(size_t threadId, MemoryAccessMode accessMode) {
     info(std::format("ACTION: t{}: {} fence", threadId, toString(accessMode)));
 }

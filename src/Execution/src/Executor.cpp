@@ -24,7 +24,7 @@ bool RandomExecutor::executeThread() {
 void RandomExecutor::writeState(std::ostream &outputStream) const {
     m_storageManager->writeStorage(outputStream);
     auto localStorages = m_threadManager.getThreadLocalStorages();
-    outputStream << "Thread-local storages:\n";
+    outputStream << "\nThread-local storages:\n";
     for (size_t i = 0; i < localStorages.size(); ++i) {
         outputStream << "t" << i << ": ";
         auto storage = localStorages[i].getStorage();

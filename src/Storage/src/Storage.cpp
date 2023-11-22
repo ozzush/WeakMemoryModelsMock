@@ -21,6 +21,7 @@ void Storage::store(size_t address, int32_t value) {
 std::vector<int32_t> Storage::getStorage() const  {
     return m_storage;
 }
+
 std::string Storage::str() const {
     std::string result;
     bool isFirstIteration = true;

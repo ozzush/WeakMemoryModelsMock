@@ -11,6 +11,7 @@
 #include "Program.h"
 #include "SequentialConsistencyStorageManager.h"
 #include "TotalStoreOrderStorageManager.h"
+#include "StrongReleaseAcquireStorageManager.h"
 
 using namespace wmm::execution;
 using namespace wmm::program;
@@ -115,8 +116,16 @@ int main(int argc, char *argv[]) {
             break;
         case MemoryModel::RA:
             throw std::runtime_error("Release-Acquire not supported");
-        case MemoryModel::SRA:
-            throw std::runtime_error("Strong Release-Acquire not supported");
+        case MemoryModel::SRA: {
+            SRA::InternalUpdateManagerPtr internalUpdateManager;
+            INIT_INTERNAL_UPDATE_MANAGER(internalUpdateManager, SRA)
+            storageManager =
+                    std::make_unique<SRA::StrongReleaseAcquireStorageManager>(
+                            10, programs.size(),
+                            std::move(internalUpdateManager),
+                            std::move(logger));
+            break;
+        }
     }
 
     ExecutorPtr executor;

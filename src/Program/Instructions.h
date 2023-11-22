@@ -36,9 +36,9 @@ struct Instruction {
     const InstructionAction action;
     virtual ~Instruction() = default;
 
-    virtual std::string str() const = 0;
-protected:
+    [[nodiscard]] virtual std::string str() const = 0;
 
+protected:
     explicit Instruction(InstructionAction action_) : action(action_) {}
 };
 
@@ -47,7 +47,7 @@ protected:
     struct InstructionName : Instruction {                                     \
         const argType argName;                                                 \
                                                                                \
-        std::string str() const override;                                 \
+        std::string str() const override;                                      \
                                                                                \
         explicit InstructionName(argType argName_)                             \
             : Instruction(InstructionAction::InstructionName),                 \
@@ -60,7 +60,7 @@ protected:
         const argType1 argName1;                                               \
         const argType2 argName2;                                               \
                                                                                \
-        std::string str() const override;                                 \
+        std::string str() const override;                                      \
                                                                                \
         explicit InstructionName(argType1 argName1_, argType2 argName2_)       \
             : Instruction(InstructionAction::InstructionName),                 \
@@ -74,7 +74,7 @@ protected:
         const argType2 argName2;                                               \
         const argType3 argName3;                                               \
                                                                                \
-        std::string str() const override;                                 \
+        std::string str() const override;                                      \
                                                                                \
         explicit InstructionName(argType1 argName1_, argType2 argName2_,       \
                                  argType3 argName3_)                           \
@@ -91,7 +91,7 @@ protected:
         const argType3 argName3;                                               \
         const argType4 argName4;                                               \
                                                                                \
-        std::string str() const override;                                 \
+        std::string str() const override;                                      \
                                                                                \
         explicit InstructionName(argType1 argName1_, argType2 argName2_,       \
                                  argType3 argName3_, argType4 argName4_)       \
@@ -122,4 +122,4 @@ InstructionImplementation1(Fence, MemoryAccessMode, memoryAccessMode);
 #undef InstructionImplementation3
 #undef InstructionImplementation4
 
-} // namespace wmm
+} // namespace wmm::program

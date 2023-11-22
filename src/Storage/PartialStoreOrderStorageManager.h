@@ -73,7 +73,6 @@ public:
                            MemoryAccessMode accessMode) override;
     void fence(size_t threadId, MemoryAccessMode accessMode) override;
 
-    [[nodiscard]] Storage getStorage() const override { return m_storage; }
     void writeStorage(std::ostream &outputStream) const override;
     bool internalUpdate() override;
 
