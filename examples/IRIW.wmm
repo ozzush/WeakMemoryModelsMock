@@ -14,47 +14,23 @@ MAKETHREAD
 1 = 1
 2 = 2
 
-3: load ACQ #1 0
-   if 0 goto 3
+/ wait x != 0
+1: load ACQ #1 0
+   if 0 goto 2
 
-load ACQ #2 0
-if 0 goto 2
-0 = 1
-if 0 goto 1
-
-1: 1 = 3
-   2 = 1
-   store REL #1 2
-   if 2 goto 0
-
-2: 1 = 3
-   2 = 1
-   store REL #1 2
-   if 2 goto 0
-
-0: 0 = 0
+/ wait y == 0
+2: load ACQ #2 0
+   if 0 goto 2
 
 
 MAKETHREAD
-1 = 2
-2 = 1
+1 = 1
+2 = 2
 
-3: load ACQ #1 0
-   if 0 goto 3
+/ wait y != 0
+2: load ACQ #2 0
+   if 0 goto 1
 
-load ACQ #2 0
-if 0 goto 2
-0 = 1
-if 0 goto 1
-
-1: 1 = 3
-   2 = 1
-   store REL #1 2
-   if 2 goto 0
-
-2: 1 = 3
-   2 = 1
-   store REL #1 2
-   if 2 goto 0
-
-0: 0 = 0
+/ wait x == 0
+1: load ACQ #1 0
+   if 0 goto 1

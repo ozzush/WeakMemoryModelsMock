@@ -61,9 +61,9 @@ bool StrongReleaseAcquireStorageManager::writeFromBuffer(size_t threadId,
     cleanUpBuffer(otherThreadId);
     auto messageVal = message.value();
     if (thread.write(messageVal)) {
-        m_storageLogger->info(
-                std::format("INTERNAL: t{} execute from t{}: {}", threadId,
-                            otherThreadId, message->str()));
+        m_storageLogger->info(std::format("INTERNAL: t{} execute from t{}: {}",
+                                          threadId, otherThreadId,
+                                          message->str()));
     } else {
         m_storageLogger->info(
                 std::format("INTERNAL: t{} skip message from t{}: {}", threadId,
@@ -82,8 +82,9 @@ void StrongReleaseAcquireStorageManager::writeStorage(
         std::ostream &outputStream) const {
     size_t i = 0;
     for (const auto &thread: m_threads) {
-        outputStream << "Thread " << i << '\n' << thread.str() << '\n';
+        outputStream << "===== Thread " << i++ << " =====\n" << thread.str() << '\n';
     }
+    outputStream << "====================\n";
     outputStream << "Location timestamps: " << join(m_locationTimestamps);
     outputStream << '\n';
 }
@@ -91,6 +92,7 @@ void StrongReleaseAcquireStorageManager::writeStorage(
 int32_t StrongReleaseAcquireStorageManager::load(size_t threadId,
                                                  size_t address,
                                                  MemoryAccessMode accessMode) {
+    acquire(threadId, address, accessMode);
     int32_t value = m_threads[threadId].read(address);
     m_storageLogger->load(threadId, address, accessMode, value);
     return value;
@@ -101,40 +103,45 @@ void StrongReleaseAcquireStorageManager::store(size_t threadId, size_t address,
                                                MemoryAccessMode accessMode) {
     m_storageLogger->store(threadId, address, value, accessMode);
     write(threadId, address, value);
+    release(threadId, address, accessMode);
 }
 
 void StrongReleaseAcquireStorageManager::compareAndSwap(
         size_t threadId, size_t address, int32_t expectedValue,
         int32_t newValue, MemoryAccessMode accessMode) {
-    while (m_threads[threadId].timestamp(address) <
-           m_locationTimestamps[address]) {
+    acquire(threadId, address, accessMode);
+    if (m_threads[threadId].timestamp(address) <
+        m_locationTimestamps[address]) {
         m_storageLogger->compareAndSwap(threadId, address, expectedValue, {},
                                         newValue, accessMode);
-        if (!internalUpdate()) {
-            throw std::runtime_error("Execution is stuck");
-        }
+        throw std::runtime_error("Timestamp is too small");
     }
     int32_t value = m_threads[threadId].read(address);
     m_storageLogger->compareAndSwap(threadId, address, expectedValue, value,
                                     newValue, accessMode);
     if (value == expectedValue) { write(threadId, address, newValue); }
+    release(threadId, address, accessMode);
 }
 void StrongReleaseAcquireStorageManager::fetchAndIncrement(
         size_t threadId, size_t address, int32_t increment,
         MemoryAccessMode accessMode) {
-    while (m_threads[threadId].timestamp(address) <
-           m_locationTimestamps[address]) {
-        if (!internalUpdate()) {
-            throw std::runtime_error("Execution is stuck");
-        }
+    acquire(threadId, address, accessMode);
+    if (m_threads[threadId].timestamp(address) <
+        m_locationTimestamps[address]) {
+        m_storageLogger->fetchAndIncrement(threadId, address, increment,
+                                           accessMode, true);
+        throw std::runtime_error("Timestamp is too small");
     }
     auto value = m_threads[threadId].read(address);
     write(threadId, address, value + increment);
+    release(threadId, address, accessMode);
 }
+
 void StrongReleaseAcquireStorageManager::fence(size_t threadId,
                                                MemoryAccessMode accessMode) {
     throw std::runtime_error("Fences not implemented");
 }
+
 size_t StrongReleaseAcquireStorageManager::minBufferPos(size_t threadId) const {
     size_t minPosition = SIZE_MAX;
     for (const auto &m_thread: m_threads) {
@@ -149,6 +156,37 @@ void StrongReleaseAcquireStorageManager::cleanUpBuffer(size_t threadId) {
     m_threads[threadId].popNFromBuffer(minPosition);
     for (auto &thread: m_threads) {
         thread.resetBufferPosByN(threadId, minPosition);
+    }
+}
+void StrongReleaseAcquireStorageManager::acquire(size_t threadId,
+                                                 ReleaseEvent releaseEvent) {
+    while (m_threads[threadId].timestamp(releaseEvent.location) <
+           releaseEvent.timestamp) {
+        writeFromBuffer(threadId, releaseEvent.threadId);
+    }
+}
+void StrongReleaseAcquireStorageManager::release(size_t threadId,
+                                                 size_t location,
+                                                 size_t timestamp) {
+    m_locationLastReleaseEvents[location] =
+            ReleaseEvent{threadId, location, timestamp};
+}
+void StrongReleaseAcquireStorageManager::acquire(size_t threadId,
+                                                 size_t address,
+                                                 MemoryAccessMode accessMode) {
+    if (accessMode == MemoryAccessMode::Acquire ||
+        accessMode == MemoryAccessMode::ReleaseAcquire) {
+        auto releaseEvent = m_locationLastReleaseEvents[address];
+        if (!releaseEvent) { return; }
+        acquire(threadId, releaseEvent.value());
+    }
+}
+void StrongReleaseAcquireStorageManager::release(size_t threadId,
+                                                 size_t location,
+                                                 MemoryAccessMode accessMode) {
+    if (accessMode == MemoryAccessMode::Release ||
+        accessMode == MemoryAccessMode::ReleaseAcquire) {
+        release(threadId, location, m_threads[threadId].timestamp(location));
     }
 }
 
@@ -266,9 +304,7 @@ bool ThreadState::write(Message message) {
     size_t location = message.location;
     int32_t value = message.value;
     size_t timestamp = message.timestamp;
-    if (timestamp <= m_locationTimestamps[location]) {
-        return false;
-    }
+    if (timestamp <= m_locationTimestamps[location]) { return false; }
     m_localStorage.store(location, value);
     m_outgoingBuffer.push(message);
     ++m_bufferPositions[m_threadId];
@@ -305,8 +341,8 @@ InteractiveInternalUpdateManager::getThreadIds() {
             return std::format("{} ({})", pair.first, pair.second.str());
         };
         std::cout << std::format(
-                "{}: {}\n", i,
-                join(m_threadIds[i], threadIdAndMessageToString), " | ");
+                "{}: {}\n", i, join(m_threadIds[i], threadIdAndMessageToString),
+                " | ");
     }
     while (true) {
         size_t threadId, otherThreadId;
@@ -338,5 +374,8 @@ void InteractiveInternalUpdateManager::reset(
             }
         }
     }
+}
+std::string ReleaseEvent::str() const {
+    return std::format("Release<t{}#{}@{}>", threadId, location, timestamp);
 }
 } // namespace wmm::storage::SRA

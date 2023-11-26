@@ -51,7 +51,7 @@ bool Thread::evaluateInstruction() {
         case InstructionAction::Goto: {
             auto cmd = *std::dynamic_pointer_cast<Goto>(instruction);
             int32_t condition = m_localStorage.load(cmd.conditionRegister);
-            if (condition) {
+            if (condition != 0) {
                 nextInstruction = m_program.getLabelMapping(cmd.label);
             }
             break;
