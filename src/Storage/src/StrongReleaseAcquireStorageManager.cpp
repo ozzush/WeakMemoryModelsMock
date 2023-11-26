@@ -82,7 +82,8 @@ void StrongReleaseAcquireStorageManager::writeStorage(
         std::ostream &outputStream) const {
     size_t i = 0;
     for (const auto &thread: m_threads) {
-        outputStream << "===== Thread " << i++ << " =====\n" << thread.str() << '\n';
+        outputStream << "===== Thread " << i++ << " =====\n"
+                     << thread.str() << '\n';
     }
     outputStream << "====================\n";
     outputStream << "Location timestamps: " << join(m_locationTimestamps);
@@ -139,7 +140,12 @@ void StrongReleaseAcquireStorageManager::fetchAndIncrement(
 
 void StrongReleaseAcquireStorageManager::fence(size_t threadId,
                                                MemoryAccessMode accessMode) {
-    throw std::runtime_error("Fences not implemented");
+    for (size_t address = 0; address < m_locationTimestamps.size(); ++address) {
+        acquire(threadId, address, accessMode);
+    }
+    for (size_t address = 0; address < m_locationTimestamps.size(); ++address) {
+        release(threadId, address, accessMode);
+    }
 }
 
 size_t StrongReleaseAcquireStorageManager::minBufferPos(size_t threadId) const {
@@ -179,13 +185,23 @@ void StrongReleaseAcquireStorageManager::acquire(size_t threadId,
         auto releaseEvent = m_locationLastReleaseEvents[address];
         if (!releaseEvent) { return; }
         acquire(threadId, releaseEvent.value());
+    } else if (accessMode == MemoryAccessMode::SequentialConsistency) {
+        size_t maxTimestamp = m_locationTimestamps[address];
+        for (const auto &thread: m_threads) {
+            if (thread.timestamp(address) == maxTimestamp) {
+                acquire(threadId,
+                        ReleaseEvent{thread.m_threadId, maxTimestamp, address});
+                return;
+            }
+        }
     }
 }
 void StrongReleaseAcquireStorageManager::release(size_t threadId,
                                                  size_t location,
                                                  MemoryAccessMode accessMode) {
     if (accessMode == MemoryAccessMode::Release ||
-        accessMode == MemoryAccessMode::ReleaseAcquire) {
+        accessMode == MemoryAccessMode::ReleaseAcquire ||
+        accessMode == MemoryAccessMode::SequentialConsistency) {
         release(threadId, location, m_threads[threadId].timestamp(location));
     }
 }
