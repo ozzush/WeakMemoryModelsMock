@@ -6,6 +6,7 @@
 
 #include "StorageManager.h"
 #include <deque>
+#include <iostream>
 #include <optional>
 #include <random>
 #include <unordered_map>
@@ -45,13 +46,13 @@ public:
 
 class ThreadState {
 private:
-    const size_t m_threadId;
     Storage m_localStorage;
     MessageBuffer m_outgoingBuffer;
     std::vector<size_t> m_bufferPositions;
     std::vector<size_t> m_locationTimestamps;
 
 public:
+    const size_t m_threadId;
     [[nodiscard]] std::optional<Message> readMessage(size_t i) const;
     bool write(size_t location, int32_t value, size_t timestamp);
 
@@ -165,17 +166,12 @@ public:
 };
 
 class InteractiveInternalUpdateManager : public InternalUpdateManager {
-    std::vector<size_t> m_threadIds;
-    std::vector<std::reference_wrapper<const MessageBuffer>> m_buffers;
+    std::vector<std::vector<std::pair<size_t, Message>>> m_threadIds;
 
     void
-    reset(const StrongReleaseAcquireStorageManager &storageManager) override {
-        throw std::runtime_error("Not implemented");
-    }
+    reset(const StrongReleaseAcquireStorageManager &storageManager) override;
 
-    std::optional<std::pair<size_t, size_t>> getThreadIds() override {
-        throw std::runtime_error("Not implemented");
-    }
+    std::optional<std::pair<size_t, size_t>> getThreadIds() override;
 
 public:
 };

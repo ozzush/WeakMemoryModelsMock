@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <format>
+#include <functional>
 #include <iostream>
 #include <sstream>
 
@@ -15,10 +16,23 @@ namespace wmm::storage::SRA {
 namespace {
 template<class T>
 std::string join(const std::vector<T> &data,
+                 std::function<std::string(T)> toString,
                  const std::string &separator = " ") {
     std::stringstream stream;
     bool isFirstIteration;
-    for (auto elm: data) {
+    for (const auto &elm: data) {
+        if (!isFirstIteration) { stream << separator; }
+        stream << toString(elm);
+    }
+    return stream.str();
+}
+
+template<class T>
+std::string join(const std::vector<T> &data,
+                 const std::string &separator = " ") {
+    std::stringstream stream;
+    bool isFirstIteration;
+    for (const auto &elm: data) {
         if (!isFirstIteration) { stream << separator; }
         stream << elm;
     }
@@ -40,18 +54,22 @@ bool StrongReleaseAcquireStorageManager::writeFromBuffer(size_t threadId,
                                                          size_t otherThreadId) {
     auto &thread = m_threads[threadId];
     const auto &otherThread = m_threads[otherThreadId];
-    while (true) {
-        size_t bufferPosition = thread.getBufferPos(otherThreadId);
-        auto message = otherThread.readMessage(bufferPosition);
-        if (!message) { return false; }
-        thread.advanceBufferPos(otherThreadId);
-        cleanUpBuffer(otherThreadId);
-        auto messageVal = message.value();
-        if (thread.write(messageVal)) {
-            m_storageLogger->info(std::format("INTERNAL: t{} execute from t{}: {}", threadId, otherThreadId, message->str()));
-            return true;
-        }
+    size_t bufferPosition = thread.getBufferPos(otherThreadId);
+    auto message = otherThread.readMessage(bufferPosition);
+    if (!message) { return false; }
+    thread.advanceBufferPos(otherThreadId);
+    cleanUpBuffer(otherThreadId);
+    auto messageVal = message.value();
+    if (thread.write(messageVal)) {
+        m_storageLogger->info(
+                std::format("INTERNAL: t{} execute from t{}: {}", threadId,
+                            otherThreadId, message->str()));
+    } else {
+        m_storageLogger->info(
+                std::format("INTERNAL: t{} skip message from t{}: {}", threadId,
+                            otherThreadId, message->str()));
     }
+    return true;
 }
 
 void StrongReleaseAcquireStorageManager::write(size_t threadId, size_t location,
@@ -66,7 +84,8 @@ void StrongReleaseAcquireStorageManager::writeStorage(
     for (const auto &thread: m_threads) {
         outputStream << "Thread " << i << '\n' << thread.str() << '\n';
     }
-    outputStream << "Location timestamps: \n" << join(m_locationTimestamps);
+    outputStream << "Location timestamps: " << join(m_locationTimestamps);
+    outputStream << '\n';
 }
 
 int32_t StrongReleaseAcquireStorageManager::load(size_t threadId,
@@ -98,9 +117,7 @@ void StrongReleaseAcquireStorageManager::compareAndSwap(
     int32_t value = m_threads[threadId].read(address);
     m_storageLogger->compareAndSwap(threadId, address, expectedValue, value,
                                     newValue, accessMode);
-    if (value == expectedValue) {
-        write(threadId, address, newValue);
-    }
+    if (value == expectedValue) { write(threadId, address, newValue); }
 }
 void StrongReleaseAcquireStorageManager::fetchAndIncrement(
         size_t threadId, size_t address, int32_t increment,
@@ -159,9 +176,7 @@ RandomInternalUpdateManager::getThreadIds() {
     if (m_nextThreadIdIndex < m_threadIds.size()) {
         auto threadId = m_threadIds[m_nextThreadIdIndex];
         auto otherThreadId = m_otherThreadIds[m_nextOtherThreadIdIndex++];
-        if (threadId == otherThreadId) {
-            return getThreadIds();
-        }
+        if (threadId == otherThreadId) { return getThreadIds(); }
         return {{threadId, otherThreadId}};
     }
     return {};
@@ -231,7 +246,7 @@ std::string Message::str() const {
 }
 
 std::optional<Message> ThreadState::readMessage(size_t i) const {
-    if (i >= m_outgoingBuffer.size()) { return std::nullopt; }
+    if (i >= m_outgoingBuffer.size()) { return {}; }
     return m_outgoingBuffer[i];
 }
 
@@ -260,6 +275,7 @@ bool ThreadState::write(Message message) {
     m_locationTimestamps[location] = timestamp;
     return true;
 }
+
 std::string ThreadState::str() const {
     return std::format("Storage: {}\nBuffer: {}\nBuffer positions: {}\nLast "
                        "timestamps: {}",
@@ -267,4 +283,60 @@ std::string ThreadState::str() const {
                        join(m_bufferPositions), join(m_locationTimestamps));
 }
 
+std::optional<std::pair<size_t, size_t>>
+InteractiveInternalUpdateManager::getThreadIds() {
+    bool allBuffersAreRead = true;
+    for (const auto &threadIds: m_threadIds) {
+        if (!threadIds.empty()) {
+            allBuffersAreRead = false;
+            break;
+        }
+    }
+    if (allBuffersAreRead) {
+        std::cout << "No execution from other thread's buffer is possible\n";
+        return {};
+    }
+    std::cout << "Choose a pair of threads. First thread will execute a "
+                 "message from the second thread's buffer:\n";
+    for (size_t i = 0; i < m_threadIds.size(); ++i) {
+        std::function<std::string(std::pair<size_t, Message>)>
+                threadIdAndMessageToString =
+                        [](std::pair<size_t, Message> pair) -> std::string {
+            return std::format("{} ({})", pair.first, pair.second.str());
+        };
+        std::cout << std::format(
+                "{}: {}\n", i,
+                join(m_threadIds[i], threadIdAndMessageToString), " | ");
+    }
+    while (true) {
+        size_t threadId, otherThreadId;
+        std::cout << "Enter thread ids > ";
+        std::cin >> threadId >> otherThreadId;
+        if (std::cin.eof() || std::cin.fail()) { return {}; }
+        if (threadId > m_threadIds.size()) {
+            std::cout << "Index out of bounds\n";
+        }
+        for (auto [id, message]: m_threadIds[threadId]) {
+            if (id == otherThreadId) { return {{threadId, otherThreadId}}; }
+        }
+        std::cout << "Choose a valid index\n";
+    }
+}
+
+void InteractiveInternalUpdateManager::reset(
+        const StrongReleaseAcquireStorageManager &storageManager) {
+    const auto &threads = storageManager.m_threads;
+    m_threadIds.clear();
+    for (const auto &thread: threads) {
+        m_threadIds.emplace_back();
+        for (size_t threadId = 0; threadId < threads.size(); ++threadId) {
+            if (threadId == thread.m_threadId) continue;
+            auto message = threads[threadId].readMessage(
+                    thread.getBufferPos(threadId));
+            if (message) {
+                m_threadIds.back().emplace_back(threadId, message.value());
+            }
+        }
+    }
+}
 } // namespace wmm::storage::SRA

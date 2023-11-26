@@ -17,10 +17,11 @@ target_sources(storage_lib PUBLIC
         src/Storage/src/SequentialConsistencyStorageManager.cpp
         src/Storage/src/StrongReleaseAcquireStorageManager.cpp
         src/Storage/src/StorageLogger.cpp
+        src/Storage/src/ReleaseAcquireStorageManager.cpp
         )
 target_link_libraries(storage_lib PUBLIC program_lib)
 
-add_library(execution_lib SHARED src/Storage/src/ReleaseAcquireStorageManager.cpp src/Storage/ReleaseAcquireStorageManager.h)
+add_library(execution_lib SHARED)
 target_include_directories(execution_lib PUBLIC src/Execution)
 target_sources(execution_lib PUBLIC
         src/Execution/src/ThreadManager.cpp
