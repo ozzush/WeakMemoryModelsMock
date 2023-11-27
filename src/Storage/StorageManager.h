@@ -37,6 +37,11 @@ public:
 
     virtual void fence(size_t threadId, MemoryAccessMode accessMode) = 0;
 
+    /**
+     * Perform some internal updates
+     *
+     * @return false if no internal updates were performed, true otherwise
+     */
     virtual bool internalUpdate() { return false; };
 
     virtual void writeStorage(std::ostream &outputStream) const = 0;
