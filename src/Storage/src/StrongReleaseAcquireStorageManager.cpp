@@ -93,7 +93,6 @@ void StrongReleaseAcquireStorageManager::writeStorage(
 int32_t StrongReleaseAcquireStorageManager::load(size_t threadId,
                                                  size_t address,
                                                  MemoryAccessMode accessMode) {
-    acquire(threadId, address, accessMode);
     int32_t value = m_threads[threadId].read(address);
     m_storageLogger->load(threadId, address, accessMode, value);
     return value;
@@ -104,13 +103,11 @@ void StrongReleaseAcquireStorageManager::store(size_t threadId, size_t address,
                                                MemoryAccessMode accessMode) {
     m_storageLogger->store(threadId, address, value, accessMode);
     write(threadId, address, value);
-    release(threadId, address, accessMode);
 }
 
 void StrongReleaseAcquireStorageManager::compareAndSwap(
         size_t threadId, size_t address, int32_t expectedValue,
         int32_t newValue, MemoryAccessMode accessMode) {
-    acquire(threadId, address, accessMode);
     if (m_threads[threadId].timestamp(address) <
         m_locationTimestamps[address]) {
         m_storageLogger->compareAndSwap(threadId, address, expectedValue, {},
@@ -121,12 +118,10 @@ void StrongReleaseAcquireStorageManager::compareAndSwap(
     m_storageLogger->compareAndSwap(threadId, address, expectedValue, value,
                                     newValue, accessMode);
     if (value == expectedValue) { write(threadId, address, newValue); }
-    release(threadId, address, accessMode);
 }
 void StrongReleaseAcquireStorageManager::fetchAndIncrement(
         size_t threadId, size_t address, int32_t increment,
         MemoryAccessMode accessMode) {
-    acquire(threadId, address, accessMode);
     if (m_threads[threadId].timestamp(address) <
         m_locationTimestamps[address]) {
         m_storageLogger->fetchAndIncrement(threadId, address, increment,
@@ -135,17 +130,11 @@ void StrongReleaseAcquireStorageManager::fetchAndIncrement(
     }
     auto value = m_threads[threadId].read(address);
     write(threadId, address, value + increment);
-    release(threadId, address, accessMode);
 }
 
 void StrongReleaseAcquireStorageManager::fence(size_t threadId,
                                                MemoryAccessMode accessMode) {
-    for (size_t address = 0; address < m_locationTimestamps.size(); ++address) {
-        acquire(threadId, address, accessMode);
-    }
-    for (size_t address = 0; address < m_locationTimestamps.size(); ++address) {
-        release(threadId, address, accessMode);
-    }
+    throw std::runtime_error("Fences not implemented");
 }
 
 size_t StrongReleaseAcquireStorageManager::minBufferPos(size_t threadId) const {
@@ -162,47 +151,6 @@ void StrongReleaseAcquireStorageManager::cleanUpBuffer(size_t threadId) {
     m_threads[threadId].popNFromBuffer(minPosition);
     for (auto &thread: m_threads) {
         thread.resetBufferPosByN(threadId, minPosition);
-    }
-}
-void StrongReleaseAcquireStorageManager::acquire(size_t threadId,
-                                                 ReleaseEvent releaseEvent) {
-    while (m_threads[threadId].timestamp(releaseEvent.location) <
-           releaseEvent.timestamp) {
-        writeFromBuffer(threadId, releaseEvent.threadId);
-    }
-}
-void StrongReleaseAcquireStorageManager::release(size_t threadId,
-                                                 size_t location,
-                                                 size_t timestamp) {
-    m_locationLastReleaseEvents[location] =
-            ReleaseEvent{threadId, location, timestamp};
-}
-void StrongReleaseAcquireStorageManager::acquire(size_t threadId,
-                                                 size_t address,
-                                                 MemoryAccessMode accessMode) {
-    if (accessMode == MemoryAccessMode::Acquire ||
-        accessMode == MemoryAccessMode::ReleaseAcquire) {
-        auto releaseEvent = m_locationLastReleaseEvents[address];
-        if (!releaseEvent) { return; }
-        acquire(threadId, releaseEvent.value());
-    } else if (accessMode == MemoryAccessMode::SequentialConsistency) {
-        size_t maxTimestamp = m_locationTimestamps[address];
-        for (const auto &thread: m_threads) {
-            if (thread.timestamp(address) == maxTimestamp) {
-                acquire(threadId,
-                        ReleaseEvent{thread.m_threadId, maxTimestamp, address});
-                return;
-            }
-        }
-    }
-}
-void StrongReleaseAcquireStorageManager::release(size_t threadId,
-                                                 size_t location,
-                                                 MemoryAccessMode accessMode) {
-    if (accessMode == MemoryAccessMode::Release ||
-        accessMode == MemoryAccessMode::ReleaseAcquire ||
-        accessMode == MemoryAccessMode::SequentialConsistency) {
-        release(threadId, location, m_threads[threadId].timestamp(location));
     }
 }
 
@@ -235,42 +183,6 @@ RandomInternalUpdateManager::getThreadIds() {
     }
     return {};
 }
-//
-//std::optional<std::pair<size_t, size_t>>
-//InteractiveInternalUpdateManager::getThreadIds() {
-//    if (m_threadIds.empty()) {
-//        std::cout << "All buffers are empty.\n";
-//        return {};
-//    }
-//    std::cout << "Choose buffer to propagate:\n";
-//    for (size_t i = 0; i < m_threadIds.size(); ++i) {
-//        std::cout << std::format("{}: {}\n", m_threadIds[i],
-//                                 m_buffers[i].get().str());
-//    }
-//    while (true) {
-//        size_t threadId;
-//        std::cout << "Enter buffer id > ";
-//        std::cin >> threadId;
-//        if (std::cin.eof() || std::cin.fail()) { return {}; }
-//        if (std::count(m_threadIds.begin(), m_threadIds.end(), threadId) == 0) {
-//            std::cout << "This buffer cannot be propagated.\n";
-//        } else {
-//            return threadId;
-//        }
-//    }
-//}
-//
-//void InteractiveInternalUpdateManager::reset(
-//        const StrongReleaseAcquireStorageManager &storageManager) {
-//    m_threadIds.clear();
-//    m_buffers.clear();
-//    for (size_t i = 0; i < storageManager.m_threads.size(); ++i) {
-//        if (!storageManager.m_threads[i].empty()) {
-//            m_threadIds.push_back(i);
-//            m_buffers.emplace_back(storageManager.m_threads.at(i));
-//        }
-//    }
-//}
 
 void MessageBuffer::push(Message message) { m_buffer.push_back(message); }
 

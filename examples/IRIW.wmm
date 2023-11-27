@@ -17,6 +17,7 @@ MAKETHREAD
 / wait x != 0
 1: load ACQ #1 0
    if 0 goto 2
+   if 1 goto 1
 
 / wait y == 0
 2: load ACQ #2 0
@@ -30,6 +31,7 @@ MAKETHREAD
 / wait y != 0
 2: load ACQ #2 0
    if 0 goto 1
+   if 1 goto 2
 
 / wait x == 0
 1: load ACQ #1 0

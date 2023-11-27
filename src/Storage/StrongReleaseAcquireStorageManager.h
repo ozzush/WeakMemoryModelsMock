@@ -102,15 +102,10 @@ private:
     std::vector<ThreadState> m_threads;
     InternalUpdateManagerPtr m_internalUpdateManager;
     std::vector<size_t> m_locationTimestamps;
-    std::vector<std::optional<ReleaseEvent>> m_locationLastReleaseEvents;
 
     bool writeFromBuffer(size_t threadId, size_t otherThreadId);
     void write(size_t threadId, size_t location, int32_t value);
     void cleanUpBuffer(size_t threadId);
-    void acquire(size_t threadId, ReleaseEvent releaseEvent);
-    void acquire(size_t threadId, size_t address, MemoryAccessMode accessMode);
-    void release(size_t threadId, size_t location, size_t timestamp);
-    void release(size_t threadId, size_t location, MemoryAccessMode accessMode);
     [[nodiscard]] size_t minBufferPos(size_t threadId) const;
 
 public:
@@ -120,7 +115,7 @@ public:
             storage::LoggerPtr &&logger = std::make_unique<FakeStorageLogger>())
         : StorageManagerInterface(std::move(logger)),
           m_locationTimestamps(storageSize),
-          m_internalUpdateManager(std::move(internalUpdateManager)), m_locationLastReleaseEvents(storageSize) {
+          m_internalUpdateManager(std::move(internalUpdateManager)) {
         m_threads.reserve(nOfThreads);
         for (size_t threadId = 0; threadId < nOfThreads; ++threadId) {
             m_threads.emplace_back(threadId, nOfThreads, storageSize);
