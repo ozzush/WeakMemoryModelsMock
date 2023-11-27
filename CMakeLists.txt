@@ -17,7 +17,6 @@ target_sources(storage_lib PUBLIC
         src/Storage/src/SequentialConsistencyStorageManager.cpp
         src/Storage/src/StrongReleaseAcquireStorageManager.cpp
         src/Storage/src/StorageLogger.cpp
-        src/Storage/src/ReleaseAcquireStorageManager.cpp
         )
 target_link_libraries(storage_lib PUBLIC program_lib)
 
