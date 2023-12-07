@@ -1,0 +1,25 @@
+MAKETHREAD
+1 = 1
+2 = 2
+/ x := 1
+store REL #1 1
+/ y := 2
+store REL #2 2
+
+/ wait y == 1
+1: load ACQ #2 0
+0 = 0 - 1
+if 0 goto 1
+
+MAKETHREAD
+1 = 1
+2 = 2
+/ y := 1
+store REL #2 1
+/ x := 2
+store REL #1 2
+
+/ wait x == 1
+1: load ACQ #1 0
+0 = 0 - 1
+if 0 goto 1

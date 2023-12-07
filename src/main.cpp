@@ -11,7 +11,7 @@
 #include "Program.h"
 #include "SequentialConsistencyStorageManager.h"
 #include "TotalStoreOrderStorageManager.h"
-#include "StrongReleaseAcquireStorageManager.h"
+#include "ReleaseAcquireStorageManager.h"
 
 using namespace wmm::execution;
 using namespace wmm::program;
@@ -114,14 +114,20 @@ int main(int argc, char *argv[]) {
                     std::make_unique<SC::SequentialConsistencyStorageManager>(
                             10, std::move(logger));
             break;
-        case MemoryModel::RA:
-            throw std::runtime_error("Release-Acquire not supported");
+        case MemoryModel::RA: {
+            RA::InternalUpdateManagerPtr internalUpdateManager;
+            INIT_INTERNAL_UPDATE_MANAGER(internalUpdateManager, RA)
+            storageManager = std::make_unique<RA::ReleaseAcquireStorageManager>(
+                    10, programs.size(), RA::Model::RA,
+                    std::move(internalUpdateManager), std::move(logger));
+            break;
+        }
         case MemoryModel::SRA: {
-            SRA::InternalUpdateManagerPtr internalUpdateManager;
-            INIT_INTERNAL_UPDATE_MANAGER(internalUpdateManager, SRA)
+            RA::InternalUpdateManagerPtr internalUpdateManager;
+            INIT_INTERNAL_UPDATE_MANAGER(internalUpdateManager, RA)
             storageManager =
-                    std::make_unique<SRA::StrongReleaseAcquireStorageManager>(
-                            10, programs.size(),
+                    std::make_unique<RA::ReleaseAcquireStorageManager>(
+                            10, programs.size(), RA::Model::SRA,
                             std::move(internalUpdateManager),
                             std::move(logger));
             break;

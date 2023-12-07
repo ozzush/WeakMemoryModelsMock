@@ -108,7 +108,7 @@ bool InteractiveExecutor::execute() {
             break;
         }
     }
-    m_storageManager->writeStorage(std::cout);
+    writeState(std::cout);
     return returnVal;
 }
 
