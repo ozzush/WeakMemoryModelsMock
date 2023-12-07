@@ -143,9 +143,7 @@ void ReleaseAcquireStorageManager::store(size_t threadId, size_t address,
                                          int32_t value,
                                          MemoryAccessMode accessMode) {
     m_storageLogger->store(threadId, address, value, accessMode);
-    write(threadId, address, value,
-          (accessMode == MemoryAccessMode::Release ||
-           accessMode == MemoryAccessMode::ReleaseAcquire));
+    write(threadId, address, value);
 }
 
 void ReleaseAcquireStorageManager::compareAndSwap(size_t threadId,
@@ -190,7 +188,13 @@ void ReleaseAcquireStorageManager::writeStorage(
 }
 void ReleaseAcquireStorageManager::fence(size_t threadId,
                                          MemoryAccessMode accessMode) {
-    throw std::runtime_error("Not implemented");
+    m_storageLogger->fence(threadId, accessMode);
+    if (isAcquire(accessMode)) {
+        read(threadId, m_storageSize);
+    }
+    if (isRelease(accessMode)) {
+        write(threadId, m_storageSize, 0, true);
+    }
 }
 
 Message RandomInternalUpdateManager::chooseMessage(
