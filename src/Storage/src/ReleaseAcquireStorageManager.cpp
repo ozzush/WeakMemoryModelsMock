@@ -164,7 +164,9 @@ void ReleaseAcquireStorageManager::write(size_t threadId, size_t location,
     m_threadViews[threadId].setTimestamp(location, newTimestamp);
     std::optional<View> releaseView;
     if (withRelease) {
-        m_baseViewPerThread[threadId] = m_threadViews[threadId];
+        if (location == m_storageSize) {
+            m_baseViewPerThread[threadId] = m_threadViews[threadId];
+        }
         releaseView = m_threadViews[threadId];
     } else {
         m_baseViewPerThread[threadId].setTimestamp(location, newTimestamp);
