@@ -53,3 +53,10 @@ timestamp that is greater than the timestamp the thread observes. If it happens
 to be less than the greatest timestamp for the location, it is inserted into
 the appropriate place in the log (the log is sorted by timestamp).
 
+Further considerations are for atomic updates.
+To perform an atomic update the thread first reads some message and then
+performs a write depending on the value. To make sure that the update is atomic
+the new message must come right after the read message in the log and no more
+messages can be inserted between them. To achieve that there is a boolean field
+in the Message class that marks whether the message was used by an atomic 
+update.
