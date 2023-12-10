@@ -7,13 +7,13 @@
 #include "Storage.h"
 #include "StorageManager.h"
 
+#include <map>
 #include <cstdint>
 #include <deque>
 #include <functional>
 #include <memory>
 #include <optional>
 #include <random>
-#include <set>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -29,13 +29,6 @@ public:
 
     View &operator|=(const View &view);
     View &operator&=(const View &view);
-
-    friend bool operator==(const View &lhs, const View &rhs) {
-        return lhs.m_timestamps == lhs.m_timestamps;
-    }
-    friend bool operator!=(const View &lhs, const View &rhs) {
-        return lhs.m_timestamps != lhs.m_timestamps;
-    }
 
     friend View operator|(View lhs, const View &rhs) { return lhs |= rhs; }
     friend View operator&(View lhs, const View &rhs) { return lhs &= rhs; }
@@ -61,39 +54,31 @@ public:
     const double timestamp;
     const View baseView;
     const std::optional<View> releaseView;
+    bool isUsedByAtomicUpdate;
 
     Message(size_t location_, int32_t value_, double timestamp_, View baseView_,
-            std::optional<View> view_ = {})
+            std::optional<View> view_ = {}, bool isUsedByAtomicUpdate = false)
         : m_viewSize(baseView_.size()), location(location_), value(value_),
           timestamp(timestamp_), baseView(std::move(baseView_)),
-          releaseView(std::move(view_)) {}
+          releaseView(std::move(view_)),
+          isUsedByAtomicUpdate(isUsedByAtomicUpdate) {}
 
     [[nodiscard]] std::string str() const;
 
     Message(size_t location, size_t viewSize)
         : Message(location, 0, 0, View(viewSize)) {}
 
-    explicit Message(double timestamp_)
-        : m_viewSize(0), location(0), value(0), timestamp(timestamp_),
-          baseView(m_viewSize) {}
-
     Message &operator=(Message &&) = delete;
     Message &operator=(const Message &) = delete;
     Message(Message &&) = default;
     Message(const Message &) = default;
-
-    friend bool operator<(const Message &lhs, const Message &rhs) {
-        return lhs.timestamp < rhs.timestamp;
-    }
-    //
-    //    friend bool operator==(const Message &lhs, const Message &rhs) {
-    //        return lhs.timestamp == rhs.timestamp;
-    //    }
 };
+
+using MessageRef = std::reference_wrapper<Message>;
 
 class SortedMessageHistory {
 private:
-    std::set<Message> m_buffer;
+    std::map<double, Message> m_buffer;
     size_t m_viewSize;
 
 public:
@@ -105,15 +90,13 @@ public:
     [[nodiscard]] size_t size() const;
     [[nodiscard]] std::string str() const;
 
-    [[nodiscard]] std::vector<Message>
-    filterGreaterOrEqualTimestamp(double timestamp) const;
+    [[nodiscard]] std::vector<MessageRef>
+    filterGreaterOrEqualTimestamp(double timestamp);
 
     SortedMessageHistory(size_t location, size_t viewSize)
-        : m_buffer({Message(location, viewSize)}), m_viewSize(viewSize) {}
+        : m_buffer({{0, Message(location, viewSize)}}), m_viewSize(viewSize) {}
 
     SortedMessageHistory() = delete;
-
-    //    Message operator[](double timestamp) const { return *m_buffer.find(Message(timestamp));}
 };
 
 class InternalUpdateManager;
@@ -135,13 +118,15 @@ private:
     Model m_model;
 
     void write(size_t threadId, size_t location, int32_t value,
-               bool useMinTimestamp = false, bool withRelease = true);
-    int32_t read(size_t threadId, size_t location, bool withAcquire = true);
+               bool useMinTimestamp, bool withRelease);
+    int32_t read(size_t threadId, size_t location, bool withAcquire,
+                 bool isReadBeforeAtomicUpdate);
 
-    [[nodiscard]] std::vector<Message> availableMessages(size_t threadId,
-                                                         size_t location) const;
+    [[nodiscard]] std::vector<MessageRef>
+    availableMessages(size_t threadId, size_t location);
 
-    void applyMessage(size_t threadId, const Message &message, bool withAcquire);
+    void applyMessage(size_t threadId, const Message &message,
+                      bool withAcquire);
     void cleanUpHistory(size_t location);
     [[nodiscard]] double minTimestamp(size_t location) const;
 
@@ -188,9 +173,10 @@ class InternalUpdateManager {
     friend class ReleaseAcquireStorageManager;
 
     [[nodiscard]] virtual Message
-    chooseMessage(const std::vector<Message> &messages) const = 0;
+    chooseMessage(const std::vector<MessageRef> &messages,
+                  bool markReadBeforeAtomicUpdate) const = 0;
     [[nodiscard]] virtual double
-    chooseNewTimestamp(const std::vector<Message> &messages) const = 0;
+    chooseNewTimestamp(const std::vector<MessageRef> &messages) const = 0;
 
 public:
     virtual ~InternalUpdateManager() = default;
@@ -200,9 +186,10 @@ class RandomInternalUpdateManager : public InternalUpdateManager {
     mutable std::mt19937 m_randomGenerator;
 
     [[nodiscard]] Message
-    chooseMessage(const std::vector<Message> &messages) const override;
+    chooseMessage(const std::vector<MessageRef> &messages,
+                  bool isReadBeforeAtomicUpdate) const override;
     double
-    chooseNewTimestamp(const std::vector<Message> &messages) const override;
+    chooseNewTimestamp(const std::vector<MessageRef> &messages) const override;
 
 public:
     explicit RandomInternalUpdateManager(unsigned long seed)
@@ -212,9 +199,10 @@ public:
 class InteractiveInternalUpdateManager : public InternalUpdateManager {
 
     [[nodiscard]] Message
-    chooseMessage(const std::vector<Message> &messages) const override;
+    chooseMessage(const std::vector<MessageRef> &messages,
+                  bool isReadBeforeAtomicUpdate) const override;
     [[nodiscard]] double
-    chooseNewTimestamp(const std::vector<Message> &messages) const override;
+    chooseNewTimestamp(const std::vector<MessageRef> &messages) const override;
 
 public:
 };

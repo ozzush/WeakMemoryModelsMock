@@ -1,0 +1,20 @@
+MAKETHREAD
+1 = 1
+2 = 2
+/ x += 1
+fai RLX #1 1
+
+MAKETHREAD
+1 = 1
+2 = 2
+/ x += 1
+fai RLX #1 1
+
+MAKETHREAD
+1 = 1
+2 = 2
+
+/ wait x == 2
+1: load RLX #1 0
+0 = 0 - 2
+if 0 goto 1
