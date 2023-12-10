@@ -1,0 +1,24 @@
+MAKETHREAD
+1 = 1
+2 = 2
+/ x := 1
+store RLX #1 1
+fence REL
+/ y := 1
+store RLX #2 1
+
+MAKETHREAD
+1 = 1
+2 = 2
+
+/ wait y == 1
+1: load RLX #2 0
+0 = 0 - 1
+if 0 goto 1
+
+fence ACQ
+
+/ if x != 1 loop indefinitely
+load RLX #1 0
+0 = 0 - 1
+2: if 0 goto 2

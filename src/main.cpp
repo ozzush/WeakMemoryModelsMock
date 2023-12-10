@@ -150,6 +150,12 @@ int main(int argc, char *argv[]) {
             throw std::runtime_error("Enumerate execution is not implemented");
     }
 
-    while (executor->execute()) {}
-    executor->writeState(std::cout);
+    while (executor->execute()) {
+        if (log >= LogLevel::EXTRA_INFO) {
+            executor->writeState(std::cout);
+        }
+    }
+    if (log < LogLevel::EXTRA_INFO) {
+        executor->writeState(std::cout);
+    }
 }

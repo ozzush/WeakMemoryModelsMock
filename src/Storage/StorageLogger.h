@@ -18,6 +18,7 @@ enum class LogLevel : int {
     ERROR = 0,
     WARNING,
     INFO,
+    EXTRA_INFO,
 };
 
 static inline bool operator<=(LogLevel lhs, LogLevel rhs) {

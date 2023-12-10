@@ -16,11 +16,13 @@ double middleTimestamp(const Message &lhs, const Message &rhs) {
 }
 
 bool isRelease(MemoryAccessMode accessMode) {
-    return accessMode == MemoryAccessMode::Release || accessMode == MemoryAccessMode::ReleaseAcquire;
+    return accessMode == MemoryAccessMode::Release ||
+           accessMode == MemoryAccessMode::ReleaseAcquire;
 }
 
 bool isAcquire(MemoryAccessMode accessMode) {
-    return accessMode == MemoryAccessMode::Acquire || accessMode == MemoryAccessMode::ReleaseAcquire;
+    return accessMode == MemoryAccessMode::Acquire ||
+           accessMode == MemoryAccessMode::ReleaseAcquire;
 }
 } // namespace
 
@@ -45,8 +47,9 @@ View &View::operator&=(const View &view) {
 }
 
 std::string Message::str() const {
-    return std::format("<#{}->{} @{} view: {}>", location, value, timestamp,
-                       view.str());
+    std::string releaseViewStr = (releaseView) ? releaseView->str() : "None";
+    return std::format("<#{}->{} @{} base_view: {} release_view: {}>", location, value, timestamp,
+                       baseView.str(), releaseViewStr);
 }
 
 
@@ -66,8 +69,6 @@ std::string SortedMessageHistory::str() const {
     }
     return result;
 }
-
-//Message SortedMessageHistory::operator[](size_t i) const { return m_buffer[i]; }
 
 size_t SortedMessageHistory::size() const { return m_buffer.size(); }
 
@@ -90,8 +91,11 @@ ReleaseAcquireStorageManager::availableMessages(size_t threadId,
     return m_messages[location].filterGreaterOrEqualTimestamp(minTimestamp);
 }
 void ReleaseAcquireStorageManager::applyMessage(size_t threadId,
-                                                const Message &message) {
-    m_threadViews[threadId] |= message.view;
+                                                const Message &message,
+                                                bool withAcquire) {
+    m_threadViews[threadId] |= (withAcquire && message.releaseView)
+                                       ? message.releaseView.value()
+                                       : message.baseView;
     cleanUpHistory(message.location);
 }
 
@@ -113,7 +117,7 @@ double ReleaseAcquireStorageManager::minTimestamp(size_t location) const {
 
 void ReleaseAcquireStorageManager::write(size_t threadId, size_t location,
                                          int32_t value, bool useMinTimestamp,
-                                         bool release) {
+                                         bool withRelease) {
     auto messages = availableMessages(threadId, location);
     double minPossibleTimestamp =
             (messages.size() < 2) ? messages.back().timestamp + 1
@@ -123,18 +127,22 @@ void ReleaseAcquireStorageManager::write(size_t threadId, size_t location,
             : (useMinTimestamp)
                     ? minPossibleTimestamp
                     : m_internalUpdateManager->chooseNewTimestamp(messages);
-    auto newView = m_threadViews[threadId];
-    newView.setTimestamp(location, newTimestamp);
-    Message message{location, value, newTimestamp, newView};
-    if (release) { m_threadViews[threadId] = newView; }
+    m_threadViews[threadId].setTimestamp(location, newTimestamp);
+    std::optional<View> releaseView;
+    if (withRelease) {
+        m_baseViewPerThread[threadId] = m_threadViews[threadId];
+        releaseView = m_threadViews[threadId];
+    } else {
+        m_baseViewPerThread[threadId].setTimestamp(location, newTimestamp);
+    }
+    auto baseView = m_baseViewPerThread[threadId];
+    Message message{location, value, newTimestamp, baseView, releaseView};
     m_messages[location].push(message);
 }
 
 int32_t ReleaseAcquireStorageManager::load(size_t threadId, size_t address,
                                            MemoryAccessMode accessMode) {
-    auto value = read(threadId, address,
-                      (accessMode == MemoryAccessMode::Acquire ||
-                       accessMode == MemoryAccessMode::ReleaseAcquire));
+    auto value = read(threadId, address, isAcquire(accessMode));
     m_storageLogger->load(threadId, address, accessMode, value);
     return value;
 }
@@ -158,18 +166,18 @@ void ReleaseAcquireStorageManager::compareAndSwap(size_t threadId,
 }
 
 int32_t ReleaseAcquireStorageManager::read(size_t threadId, size_t location,
-                                           bool withViewUpdate) {
+                                           bool withAcquire) {
     auto messages = availableMessages(threadId, location);
     auto message = m_internalUpdateManager->chooseMessage(messages);
-    if (withViewUpdate) { applyMessage(threadId, message); }
+    applyMessage(threadId, message, withAcquire);
     return message.value;
 }
 
 void ReleaseAcquireStorageManager::fetchAndIncrement(
         size_t threadId, size_t address, int32_t increment,
         MemoryAccessMode accessMode) {
-    int32_t value = read(threadId, address);
-    write(threadId, address, value + increment, true);
+    int32_t value = read(threadId, address, isAcquire(accessMode));
+    write(threadId, address, value + increment, true, isRelease(accessMode));
     m_storageLogger->fetchAndIncrement(threadId, address, increment,
                                        accessMode);
 }
@@ -189,12 +197,8 @@ void ReleaseAcquireStorageManager::writeStorage(
 void ReleaseAcquireStorageManager::fence(size_t threadId,
                                          MemoryAccessMode accessMode) {
     m_storageLogger->fence(threadId, accessMode);
-    if (isAcquire(accessMode)) {
-        read(threadId, m_storageSize);
-    }
-    if (isRelease(accessMode)) {
-        write(threadId, m_storageSize, 0, true);
-    }
+    if (isAcquire(accessMode)) { read(threadId, m_storageSize); }
+    if (isRelease(accessMode)) { write(threadId, m_storageSize, 0, true); }
 }
 
 Message RandomInternalUpdateManager::chooseMessage(
