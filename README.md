@@ -45,3 +45,11 @@ This the view of the writing thread at the last release fence.
 * An optional release view, which is attached to
 release writes and acquired by acquire reads. It is equal to the view of 
 the writing thread at the time of performing the write.
+
+The difference between RA and SRA modes is as such: when choosing the timestamp
+for a new write the SRA model picks a timestamp that is greater than the
+greatest timestamp for the location at the time, but the RA model can pick any
+timestamp that is greater than the timestamp the thread observes. If it happens
+to be less than the greatest timestamp for the location, it is inserted into
+the appropriate place in the log (the log is sorted by timestamp).
+
