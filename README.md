@@ -1,8 +1,7 @@
 # Weak Memory Models Mock
 
-Supports SC, TSO, PSO and RA/SRA (with RA fences) memory models. Has two
-execution modes: random and
-interactive.
+Supports SC, TSO, PSO and RA/SRA (with RA and SC fences) memory models. Has two
+execution modes: random and interactive.
 
 ## Architecture
 
@@ -60,3 +59,33 @@ the new message must come right after the read message in the log and no more
 messages can be inserted between them. To achieve that there is a boolean field
 in the Message class that marks whether the message was used by an atomic 
 update.
+
+### RA fences
+
+There is an additional location in memory to facilitate
+fences. Whenever there is a release fence, a release write is performed in that 
+location. Also, the base view of the writing thread is updated to its current 
+view. That way all subsequent writes will include the view of the thread
+during the fence instruction.
+
+### SC fences
+
+Each thread acquires the current thread's current view.
+That way in RA mode other threads can no longer perform writes before the
+fencing thread's last write.
+
+## Build & Execution
+
+Use a compiler that supports C++20 standard. Though it should be ok to use any 
+compiler that supports `std::format`.
+
+Positional arguments:
+1. Path to a program file
+2. Memory model: one of `{sc, tso, pso, sra, ra}`
+3. Execution mode: one of `{rand, interact}`
+4. Log level: integer from `[0, 3]`. 
+   * `0` - no log
+   * `1` - errors only (no errors arise so it is the same as 0)
+   * `2` - info, print trace of the execution and the state of the model in 
+   the end
+   * `3` - extra info, print both action log and model state after each step

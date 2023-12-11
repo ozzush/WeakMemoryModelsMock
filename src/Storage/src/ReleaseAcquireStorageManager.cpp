@@ -237,8 +237,17 @@ void ReleaseAcquireStorageManager::writeStorage(
 void ReleaseAcquireStorageManager::fence(size_t threadId,
                                          MemoryAccessMode accessMode) {
     m_storageLogger->fence(threadId, accessMode);
-    read(threadId, m_storageSize, isAcquire(accessMode), true);
-    write(threadId, m_storageSize, 0, true, isRelease(accessMode));
+    if (accessMode == MemoryAccessMode::SequentialConsistency) {
+        for (auto &view: m_threadViews) { view |= m_threadViews[threadId]; }
+        for (size_t location = 0; location < m_viewSize; ++location) {
+            cleanUpHistory(location);
+        }
+    } else {
+        if (isAcquire(accessMode)) {
+            read(threadId, m_storageSize, true, isRelease(accessMode));
+        }
+        write(threadId, m_storageSize, 0, true, isRelease(accessMode));
+    }
 }
 
 Message RandomInternalUpdateManager::chooseMessage(
