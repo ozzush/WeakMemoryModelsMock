@@ -12,8 +12,13 @@
 namespace wmm::storage::RA {
 
 namespace {
-double middleTimestamp(const Message &lhs, const Message &rhs) {
-    return (lhs.timestamp + rhs.timestamp) / 2;
+double middleTimestamp(double lhs, double rhs) {
+    assert(lhs < rhs);
+    double newTimestamp = (lhs + rhs) / 2;
+    if (newTimestamp <= lhs || rhs <= newTimestamp) {
+        throw std::runtime_error("Can't generate a proper timestamp");
+    }
+    return newTimestamp;
 }
 
 bool isRelease(MemoryAccessMode accessMode) {
@@ -154,8 +159,10 @@ void ReleaseAcquireStorageManager::write(size_t threadId, size_t location,
                                          bool withRelease) {
     auto messages = availableMessages(threadId, location);
     double minPossibleTimestamp =
-            (messages.size() < 2) ? messages.back().get().timestamp + 1
-                                  : middleTimestamp(messages[0], messages[1]);
+            (messages.size() < 2)
+                    ? messages.back().get().timestamp + 1
+                    : middleTimestamp(messages[0].get().timestamp,
+                                      messages[1].get().timestamp);
     double newTimestamp =
             (m_model == Model::SRA) ? messages.back().get().timestamp + 1
             : (useMinTimestamp)
@@ -281,8 +288,8 @@ double RandomInternalUpdateManager::chooseNewTimestamp(
     if (baseMessagePos == messages.size() - 1) {
         return messages.back().get().timestamp + 1;
     } else {
-        return middleTimestamp(messages[baseMessagePos],
-                               messages[baseMessagePos + 1]);
+        return middleTimestamp(messages[baseMessagePos].get().timestamp,
+                               messages[baseMessagePos + 1].get().timestamp);
     }
 }
 Message InteractiveInternalUpdateManager::chooseMessage(
