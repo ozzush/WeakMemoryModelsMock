@@ -168,8 +168,6 @@ void ReleaseAcquireStorageManager::write(size_t threadId, size_t location,
             m_baseViewPerThread[threadId] = m_threadViews[threadId];
         }
         releaseView = m_threadViews[threadId];
-    } else {
-        m_baseViewPerThread[threadId].setTimestamp(location, newTimestamp);
     }
     auto baseView = m_baseViewPerThread[threadId];
     Message message{location, value, newTimestamp, baseView, releaseView};
