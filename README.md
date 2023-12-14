@@ -89,3 +89,8 @@ Positional arguments:
    * `2` - info, print trace of the execution and the state of the model in 
    the end
    * `3` - extra info, print both action log and model state after each step
+
+Example command
+```bash
+examples/ra_fences.wmm ra rand 2
+```
