@@ -92,5 +92,5 @@ Positional arguments:
 
 Example command
 ```bash
-examples/ra_fences.wmm ra rand 2
+./path/to/executable examples/ra_fences.wmm ra rand 2
 ```
